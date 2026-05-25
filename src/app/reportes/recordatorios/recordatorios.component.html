@@ -1,0 +1,40 @@
+<div class="page-container">
+  <h2 class="page-title">Recordatorios de Mantenimiento</h2>
+
+  @if (loading) {
+    <p class="text-muted">Analizando historial de servicios...</p>
+  } @else if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  } @else if (recordatorios.length === 0) {
+    <p class="text-muted">No tienes vehículos registrados o aún no hay historial de servicios para generar recomendaciones.</p>
+  } @else {
+    <div class="list-group">
+      @for (r of recordatorios; track r.vehiculo_id) {
+        <div class="list-item">
+          <div class="list-item-header">
+            <strong>{{ r.marca }} {{ r.modelo }} ({{ r.anio }})</strong>
+            <span class="badge badge-muted">{{ r.placa }}</span>
+          </div>
+
+          @if (r.alertas.length === 0) {
+            <p class="text-muted">Sin alertas pendientes. Tu vehículo está al día.</p>
+          } @else {
+            <div style="margin-top:8px">
+              @for (a of r.alertas; track a.categoria) {
+                <div class="sub-item" style="margin-bottom:8px">
+                  <div class="list-item-header">
+                    <span class="badge" [class]="alertaClass(a.dias_desde_ultimo)">
+                      {{ a.categoria | titlecase }}
+                    </span>
+                    <span class="text-muted">{{ a.dias_desde_ultimo }} días desde el último servicio</span>
+                  </div>
+                  <p class="text-muted">{{ a.recomendacion }}</p>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

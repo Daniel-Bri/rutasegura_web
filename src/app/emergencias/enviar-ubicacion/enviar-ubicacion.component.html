@@ -1,2 +1,45 @@
-<!-- CU06 - Enviar Ubicación GPS -->
-<p>CU06 - Enviar Ubicación GPS</p>
+<div class="page-container">
+  <h2 class="page-title">Enviar Ubicación GPS</h2>
+
+  @if (errorGps) {
+    <div class="alert alert-error">{{ errorGps }}</div>
+    <button class="btn btn-secondary" (click)="obtenerUbicacion()">Reintentar</button>
+  }
+
+  @if (coordenadas) {
+    <div class="card info-card">
+      <p><strong>Coordenadas obtenidas:</strong></p>
+      <p>Latitud: {{ coordenadas.lat | number:'1.6-6' }}</p>
+      <p>Longitud: {{ coordenadas.lng | number:'1.6-6' }}</p>
+    </div>
+  }
+
+  @if (msg) {
+    <div class="alert" [class.alert-success]="msg.tipo === 'ok'" [class.alert-error]="msg.tipo === 'error'">
+      {{ msg.texto }}
+    </div>
+  }
+
+  @if (solicitudes.length === 0) {
+    <p class="text-muted">No tienes emergencias activas en este momento.</p>
+  } @else {
+    <p class="text-muted">Selecciona la emergencia a la que quieres enviar tu ubicación actual:</p>
+    <div class="list-group">
+      @for (s of solicitudes; track s.incidente.id) {
+        <div class="list-item">
+          <div>
+            <strong>Emergencia #{{ s.incidente.id }}</strong>
+            <span class="badge badge-info ml-2">{{ s.incidente.estado }}</span>
+          </div>
+          <p class="text-muted">{{ s.incidente.descripcion ?? 'Sin descripción' }}</p>
+          <button
+            class="btn btn-primary"
+            [disabled]="!coordenadas || enviando"
+            (click)="enviar(s.incidente.id)">
+            {{ enviando ? 'Enviando...' : 'Enviar mi ubicación' }}
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

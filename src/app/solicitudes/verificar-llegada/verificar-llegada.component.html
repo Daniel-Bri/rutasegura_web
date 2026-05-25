@@ -1,0 +1,48 @@
+<div class="page-container">
+  <h2 class="page-title">Verificar Llegada del Técnico</h2>
+
+  @if (msg) {
+    <div class="alert" [class.alert-success]="msg.tipo === 'ok'" [class.alert-error]="msg.tipo === 'error'">
+      {{ msg.texto }}
+    </div>
+  }
+
+  @if (confirmarId) {
+    <div class="modal-overlay">
+      <div class="modal-box">
+        <h3>¿Confirmar llegada?</h3>
+        <p>Esto indica que el técnico ya se encuentra en tu ubicación y puede comenzar el servicio.</p>
+        <div class="modal-actions">
+          <button class="btn btn-primary" (click)="confirmar()">Sí, el técnico llegó</button>
+          <button class="btn btn-secondary" (click)="cancelarConfirmacion()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (loading) {
+    <p class="text-muted">Cargando...</p>
+  } @else if (solicitudes.length === 0) {
+    <p class="text-muted">No tienes técnicos en camino en este momento.</p>
+  } @else {
+    <div class="list-group">
+      @for (s of solicitudes; track s.incidente.id) {
+        <div class="list-item">
+          <div class="list-item-header">
+            <strong>Emergencia #{{ s.incidente.id }}</strong>
+            <span class="badge badge-info">Técnico en camino</span>
+          </div>
+          @if (s.asignacion?.eta) {
+            <p class="text-muted">ETA estimado: {{ s.asignacion!.eta }} minutos</p>
+          }
+          <button
+            class="btn btn-primary btn-sm"
+            [disabled]="confirmando === s.asignacion!.id"
+            (click)="solicitarConfirmacion(s.asignacion!.id)">
+            {{ confirmando === s.asignacion!.id ? 'Confirmando...' : 'Confirmar llegada' }}
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

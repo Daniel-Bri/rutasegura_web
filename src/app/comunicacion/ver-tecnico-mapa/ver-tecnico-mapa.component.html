@@ -1,2 +1,31 @@
-<!-- CU20 - Ver Técnico en Mapa -->
-<p>CU20 - Ver Técnico en Mapa</p>
+<div class="page-container">
+  <h2 class="page-title">Ubicación del Técnico</h2>
+
+  @if (!asignacionId && !loading) {
+    <p class="text-muted">No tienes ningún servicio activo en este momento.</p>
+  }
+
+  @if (loading) {
+    <p class="text-muted">Obteniendo ubicación...</p>
+  }
+
+  @if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  }
+
+  @if (ubicacion) {
+    <div class="card">
+      <div class="card-body">
+        <p><strong>Latitud:</strong> {{ ubicacion.latitud }}</p>
+        <p><strong>Longitud:</strong> {{ ubicacion.longitud }}</p>
+        <p class="text-muted">
+          Actualizado: {{ ubicacion.updated_at | date:'HH:mm:ss' }}
+        </p>
+        <a [href]="mapsUrl!" target="_blank" class="btn btn-primary">
+          Ver en Google Maps
+        </a>
+      </div>
+    </div>
+    <p class="text-muted" style="margin-top:8px">La ubicación se actualiza automáticamente cada 20 segundos.</p>
+  }
+</div>

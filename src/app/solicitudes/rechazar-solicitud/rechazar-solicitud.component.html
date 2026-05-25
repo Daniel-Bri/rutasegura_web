@@ -1,2 +1,49 @@
-<!-- CU16 - Rechazar Solicitud -->
-<p>CU16 - Rechazar Solicitud</p>
+<div class="page-container">
+  <h2 class="page-title">Rechazar Solicitud</h2>
+
+  @if (msg) {
+    <div class="alert" [class.alert-success]="msg.tipo === 'ok'" [class.alert-error]="msg.tipo === 'error'">
+      {{ msg.texto }}
+    </div>
+  }
+
+  @if (confirmarId) {
+    <div class="modal-overlay">
+      <div class="modal-box">
+        <h3>¿Confirmar rechazo?</h3>
+        <p>El incidente volverá a estar disponible para otros talleres. Esta acción no se puede deshacer.</p>
+        <div class="modal-actions">
+          <button class="btn btn-danger" (click)="rechazar()">Sí, rechazar</button>
+          <button class="btn btn-secondary" (click)="cancelarConfirmacion()">Volver</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (loading) {
+    <p class="text-muted">Cargando asignaciones...</p>
+  } @else if (asignaciones.length === 0) {
+    <p class="text-muted">No tienes asignaciones activas que puedas rechazar.</p>
+  } @else {
+    <div class="list-group">
+      @for (a of asignaciones; track a.id) {
+        <div class="list-item">
+          <div class="list-item-header">
+            <strong>Asignación #{{ a.id }}</strong>
+            <span class="badge badge-info">{{ a.estado }}</span>
+          </div>
+          <p class="text-muted">Incidente #{{ a.incidente_id }}</p>
+          @if (a.eta) {
+            <p class="text-muted">ETA estimado: {{ a.eta }} min</p>
+          }
+          <button
+            class="btn btn-danger btn-sm"
+            [disabled]="rechazando === a.incidente_id"
+            (click)="solicitarConfirmacion(a.incidente_id)">
+            {{ rechazando === a.incidente_id ? 'Rechazando...' : 'Rechazar asignación' }}
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,2 +1,76 @@
-<!-- CU04 - Gestionar Vehículos -->
-<p>CU04 - Gestionar Vehículos</p>
+<div class="page-container">
+  <div class="page-header">
+    <h2 class="page-title">Mis Vehículos</h2>
+    <button class="btn btn-primary btn-sm" (click)="toggleForm()">
+      {{ mostrarForm ? 'Cancelar' : '+ Agregar vehículo' }}
+    </button>
+  </div>
+
+  @if (msg) {
+    <div class="alert" [class.alert-success]="msg.tipo === 'ok'" [class.alert-error]="msg.tipo === 'error'">
+      {{ msg.texto }}
+    </div>
+  }
+
+  @if (mostrarForm) {
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-body">
+        <h3>Registrar nuevo vehículo</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Placa</label>
+            <input class="form-control" [(ngModel)]="form.placa" placeholder="ABC-1234" />
+          </div>
+          <div class="form-group">
+            <label>Marca</label>
+            <input class="form-control" [(ngModel)]="form.marca" placeholder="Toyota" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Modelo</label>
+            <input class="form-control" [(ngModel)]="form.modelo" placeholder="Corolla" />
+          </div>
+          <div class="form-group">
+            <label>Año</label>
+            <input class="form-control" type="number" [(ngModel)]="form.anio" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Color</label>
+          <input class="form-control" [(ngModel)]="form.color" placeholder="Blanco" />
+        </div>
+        <button
+          class="btn btn-primary"
+          [disabled]="!form.placa || !form.marca || !form.modelo || !form.color || guardando"
+          (click)="registrar()">
+          {{ guardando ? 'Guardando...' : 'Registrar vehículo' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (loading) {
+    <p class="text-muted">Cargando vehículos...</p>
+  } @else if (vehiculos.length === 0) {
+    <p class="text-muted">No tienes vehículos registrados. Agrega uno para poder solicitar asistencia.</p>
+  } @else {
+    <div class="list-group">
+      @for (v of vehiculos; track v.id) {
+        <div class="list-item">
+          <div class="list-item-header">
+            <strong>{{ v.marca }} {{ v.modelo }} ({{ v.anio }})</strong>
+            <span class="badge badge-info">{{ v.placa }}</span>
+          </div>
+          <p class="text-muted">Color: {{ v.color }}</p>
+          <button
+            class="btn btn-danger btn-sm"
+            [disabled]="eliminando === v.id"
+            (click)="eliminar(v.id)">
+            {{ eliminando === v.id ? 'Eliminando...' : 'Eliminar' }}
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

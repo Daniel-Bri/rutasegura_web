@@ -1,2 +1,51 @@
-<!-- CU11 - Cancelar Solicitud -->
-<p>CU11 - Cancelar Solicitud</p>
+<div class="page-container">
+  <h2 class="page-title">Cancelar Solicitud</h2>
+
+  @if (msg) {
+    <div class="alert" [class.alert-success]="msg.tipo === 'ok'" [class.alert-error]="msg.tipo === 'error'">
+      {{ msg.texto }}
+    </div>
+  }
+
+  @if (confirmarId) {
+    <div class="modal-overlay">
+      <div class="modal-box">
+        <h3>¿Confirmar cancelación?</h3>
+        <p>Esta acción no se puede deshacer. El taller asignado será notificado.</p>
+        <div class="modal-actions">
+          <button class="btn btn-danger" (click)="cancelar()">Sí, cancelar</button>
+          <button class="btn btn-secondary" (click)="cancelarConfirmacion()">Volver</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (loading) {
+    <p class="text-muted">Cargando solicitudes...</p>
+  } @else if (solicitudes.length === 0) {
+    <p class="text-muted">No tienes solicitudes activas que puedas cancelar.</p>
+  } @else {
+    <div class="list-group">
+      @for (s of solicitudes; track s.incidente.id) {
+        <div class="list-item">
+          <div class="list-item-header">
+            <strong>Emergencia #{{ s.incidente.id }}</strong>
+            <span class="badge" [class]="badgeClass(s.incidente.estado)">
+              {{ estadoLabel(s.incidente.estado) }}
+            </span>
+          </div>
+          <p class="text-muted">{{ s.incidente.descripcion ?? 'Sin descripción' }}</p>
+          @if (s.asignacion) {
+            <p class="text-muted">Taller asignado — Estado: {{ s.asignacion.estado }}</p>
+          }
+          <button
+            class="btn btn-danger btn-sm"
+            [disabled]="cancelando === s.incidente.id"
+            (click)="solicitarConfirmacion(s.incidente.id)">
+            {{ cancelando === s.incidente.id ? 'Cancelando...' : 'Cancelar esta solicitud' }}
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

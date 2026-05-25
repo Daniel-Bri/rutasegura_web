@@ -1,0 +1,102 @@
+<div class="page-container">
+  <div class="page-header" style="margin-bottom:16px">
+    <h2 class="page-title">Reporte del Taller</h2>
+    @if (resumen) {
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary btn-sm" (click)="exportarCSV()">Exportar CSV</button>
+        <button class="btn btn-primary btn-sm" (click)="imprimir()">Imprimir</button>
+      </div>
+    }
+  </div>
+
+  <p class="text-muted">Generado: {{ fechaGeneracion | date:'dd/MM/yyyy HH:mm' }}</p>
+
+  @if (loading) {
+    <p class="text-muted">Generando reporte...</p>
+  } @else if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  } @else if (resumen) {
+    <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:16px">
+      <div class="stat-card card">
+        <div class="card-body">
+          <p class="text-muted">Total servicios</p>
+          <h3>{{ resumen.total_servicios }}</h3>
+        </div>
+      </div>
+      <div class="stat-card card">
+        <div class="card-body">
+          <p class="text-muted">Finalizados</p>
+          <h3>{{ resumen.servicios_finalizados }}</h3>
+        </div>
+      </div>
+      <div class="stat-card card">
+        <div class="card-body">
+          <p class="text-muted">Pagados</p>
+          <h3>{{ resumen.servicios_pagados }}</h3>
+        </div>
+      </div>
+      <div class="stat-card card">
+        <div class="card-body">
+          <p class="text-muted">Ingresos brutos</p>
+          <h3>Bs {{ resumen.ingresos_brutos | number:'1.2-2' }}</h3>
+        </div>
+      </div>
+      <div class="stat-card card">
+        <div class="card-body">
+          <p class="text-muted">Comisión (10%)</p>
+          <h3>Bs {{ resumen.comision_plataforma | number:'1.2-2' }}</h3>
+        </div>
+      </div>
+      <div class="stat-card card">
+        <div class="card-body">
+          <p class="text-muted">Ingresos netos</p>
+          <h3>Bs {{ resumen.ingresos_netos | number:'1.2-2' }}</h3>
+        </div>
+      </div>
+      <div class="stat-card card">
+        <div class="card-body">
+          <p class="text-muted">Ticket promedio</p>
+          <h3>Bs {{ resumen.ticket_promedio | number:'1.2-2' }}</h3>
+        </div>
+      </div>
+      <div class="stat-card card">
+        <div class="card-body">
+          <p class="text-muted">Calificación promedio</p>
+          <h3>
+            @if (resumen.promedio_calificacion != null) {
+              {{ resumen.promedio_calificacion | number:'1.1-1' }} / 5
+            } @else {
+              Sin calificaciones
+            }
+          </h3>
+        </div>
+      </div>
+    </div>
+
+    @if (resumen.detalle_pagos.length > 0) {
+      <h3 style="margin-top:24px">Detalle de pagos</h3>
+      <table class="table" style="margin-top:8px">
+        <thead>
+          <tr>
+            <th>#Pago</th>
+            <th>Incidente</th>
+            <th>Monto (Bs)</th>
+            <th>Método</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of resumen.detalle_pagos; track p.pago_id) {
+            <tr>
+              <td>{{ p.pago_id }}</td>
+              <td>#{{ p.incidente_id }}</td>
+              <td>{{ p.monto | number:'1.2-2' }}</td>
+              <td>{{ p.metodo }}</td>
+              <td>{{ p.fecha ? (p.fecha | date:'dd/MM/yyyy') : '-' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  }
+</div>

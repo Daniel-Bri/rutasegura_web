@@ -1,0 +1,36 @@
+<div class="page-container" style="text-align:center">
+  <h2 class="page-title">Botón SOS</h2>
+  <p class="text-muted">Activa una emergencia de alta prioridad. Los talleres más cercanos serán notificados de inmediato.</p>
+
+  @if (msg) {
+    <div class="alert" [class.alert-success]="msg.tipo === 'ok'" [class.alert-error]="msg.tipo === 'error'">
+      {{ msg.texto }}
+    </div>
+  }
+
+  @if (coordenadas) {
+    <p class="text-muted">
+      Ubicación detectada: {{ coordenadas.lat | number:'1.4-4' }}, {{ coordenadas.lng | number:'1.4-4' }}
+    </p>
+  }
+
+  <button
+    class="btn btn-danger"
+    style="font-size:1.5rem;padding:24px 48px;margin-top:24px"
+    [disabled]="enviando || obteniendo"
+    (click)="activar()">
+    @if (obteniendo) {
+      Obteniendo ubicación...
+    } @else if (enviando) {
+      Enviando SOS...
+    } @else {
+      🆘 ACTIVAR SOS
+    }
+  </button>
+
+  @if (!enviando && !obteniendo && msg?.tipo !== 'ok') {
+    <p class="text-muted" style="margin-top:16px">
+      Se intentará obtener tu ubicación GPS automáticamente al presionar el botón.
+    </p>
+  }
+</div>

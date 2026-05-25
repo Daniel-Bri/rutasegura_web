@@ -1,2 +1,44 @@
-<!-- CU09 - Agregar Descripción -->
-<p>CU09 - Agregar Descripción</p>
+<div class="page-container">
+  <h2 class="page-title">Agregar Descripción</h2>
+
+  @if (msg) {
+    <div class="alert" [class.alert-success]="msg.tipo === 'ok'" [class.alert-error]="msg.tipo === 'error'">
+      {{ msg.texto }}
+    </div>
+  }
+
+  @if (solicitudes.length === 0) {
+    <p class="text-muted">No tienes emergencias activas en este momento.</p>
+  } @else {
+    <div class="form-group">
+      <label>Emergencia</label>
+      <select class="form-control" [(ngModel)]="seleccionId">
+        <option [ngValue]="null">-- Selecciona una emergencia --</option>
+        @for (s of solicitudes; track s.incidente.id) {
+          <option [ngValue]="s.incidente.id">
+            Emergencia #{{ s.incidente.id }} — {{ s.incidente.estado }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Descripción del problema</label>
+      <textarea
+        class="form-control"
+        rows="4"
+        placeholder="Describe el problema con tu vehículo..."
+        [(ngModel)]="descripcion"
+        maxlength="1000">
+      </textarea>
+      <small class="text-muted">{{ descripcion.length }}/1000 caracteres</small>
+    </div>
+
+    <button
+      class="btn btn-primary"
+      [disabled]="!seleccionId || !descripcion.trim() || enviando"
+      (click)="enviar()">
+      {{ enviando ? 'Guardando...' : 'Guardar descripción' }}
+    </button>
+  }
+</div>

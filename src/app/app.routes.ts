@@ -30,6 +30,16 @@ import { CalificarServicioComponent } from './reportes/calificar-servicio/califi
 import { AccesoDenegadoComponent } from './shared/acceso-denegado/acceso-denegado.component';
 import { CambiarContrasenaComponent } from './acceso-registro/cambiar-contrasena/cambiar-contrasena.component';
 import { RecuperarContrasenaComponent } from './acceso-registro/recuperar-contrasena/recuperar-contrasena.component';
+import { GestionarVehiculosComponent } from './acceso-registro/gestionar-vehiculos/gestionar-vehiculos.component';
+import { EnviarUbicacionComponent } from './emergencias/enviar-ubicacion/enviar-ubicacion.component';
+import { AgregarDescripcionComponent } from './emergencias/agregar-descripcion/agregar-descripcion.component';
+import { CancelarSolicitudComponent } from './solicitudes/cancelar-solicitud/cancelar-solicitud.component';
+import { RechazarSolicitudComponent } from './solicitudes/rechazar-solicitud/rechazar-solicitud.component';
+import { VerTecnicoMapaComponent } from './comunicacion/ver-tecnico-mapa/ver-tecnico-mapa.component';
+import { BotonSosComponent } from './emergencias/boton-sos/boton-sos.component';
+import { VerificarLlegadaComponent } from './solicitudes/verificar-llegada/verificar-llegada.component';
+import { RecordatoriosComponent } from './reportes/recordatorios/recordatorios.component';
+import { ReporteTallerComponent } from './reportes/reporte-taller/reporte-taller.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
@@ -55,19 +65,24 @@ export const routes: Routes = [
       { path: 'acceso-registro/registrar-taller',    component: RegistrarTallerComponent,    canActivate: [roleGuard], data: { roles: ['taller'] } },
       { path: 'acceso-registro/aprobar-talleres',    component: AprobarTalleresComponent,    canActivate: [roleGuard], data: { roles: ['admin'] } },
       { path: 'acceso-registro/gestionar-usuarios',  component: GestionarUsuariosComponent,  canActivate: [roleGuard], data: { roles: ['admin'] } },
-      { path: 'acceso-registro/gestionar-vehiculos', component: DashboardHomeComponent,      canActivate: [roleGuard], data: { roles: ['cliente'] } },
+      { path: 'acceso-registro/gestionar-vehiculos', component: GestionarVehiculosComponent, canActivate: [roleGuard], data: { roles: ['cliente'] } },
 
       // ── Emergencias (CU05–CU09) ────────────────────────────
-      { path: 'emergencias/adjuntar-fotos',          component: AdjuntarFotosComponent,      canActivate: [roleGuard], data: { roles: ['cliente'] } },
-      { path: 'emergencias/enviar-audio',            component: EnviarAudioComponent,        canActivate: [roleGuard], data: { roles: ['cliente'] } },
-      { path: 'emergencias/reportar-emergencia',     component: DashboardHomeComponent,      canActivate: [roleGuard], data: { roles: ['cliente'] } },
-      { path: 'emergencias/enviar-ubicacion',        component: DashboardHomeComponent,      canActivate: [roleGuard], data: { roles: ['cliente'] } },
+      { path: 'emergencias/adjuntar-fotos',          component: AdjuntarFotosComponent,        canActivate: [roleGuard], data: { roles: ['cliente'] } },
+      { path: 'emergencias/enviar-audio',            component: EnviarAudioComponent,          canActivate: [roleGuard], data: { roles: ['cliente'] } },
+      { path: 'emergencias/reportar-emergencia',     component: DashboardHomeComponent,        canActivate: [roleGuard], data: { roles: ['cliente'] } },
+      { path: 'emergencias/enviar-ubicacion',        component: EnviarUbicacionComponent,      canActivate: [roleGuard], data: { roles: ['cliente'] } },
+      { path: 'emergencias/agregar-descripcion',     component: AgregarDescripcionComponent,   canActivate: [roleGuard], data: { roles: ['cliente'] } },
+      { path: 'emergencias/boton-sos',               component: BotonSosComponent,             canActivate: [roleGuard], data: { roles: ['cliente'] } },
 
       // ── Solicitudes ────────────────────────────────────────
       { path: 'solicitudes/ver-solicitudes-disponibles', component: VerSolicitudesDisponiblesComponent, canActivate: [roleGuard], data: { roles: ['taller'] } },
+      { path: 'solicitudes/aceptar-solicitud',           component: VerSolicitudesDisponiblesComponent, canActivate: [roleGuard], data: { roles: ['taller'] } },
       { path: 'solicitudes/ver-estado-solicitud',        component: VerEstadoSolicitudComponent,        canActivate: [roleGuard], data: { roles: ['cliente'] } },
       { path: 'solicitudes/ver-detalle-incidente',       component: VerDetalleIncidenteComponent,       canActivate: [roleGuard], data: { roles: ['taller'] } },
-      { path: 'solicitudes/cancelar-solicitud',          component: DashboardHomeComponent,             canActivate: [roleGuard], data: { roles: ['cliente'] } },
+      { path: 'solicitudes/cancelar-solicitud',          component: CancelarSolicitudComponent,         canActivate: [roleGuard], data: { roles: ['cliente'] } },
+      { path: 'solicitudes/rechazar-solicitud',          component: RechazarSolicitudComponent,         canActivate: [roleGuard], data: { roles: ['taller'] } },
+      { path: 'solicitudes/verificar-llegada',           component: VerificarLlegadaComponent,          canActivate: [roleGuard], data: { roles: ['cliente'] } },
 
       // ── Talleres y Técnicos ────────────────────────────────
       { path: 'talleres-tecnicos/gestionar-tecnicos',           component: GestionarTecnicosComponent,           canActivate: [roleGuard], data: { roles: ['taller'] } },
@@ -83,16 +98,18 @@ export const routes: Routes = [
       { path: 'cotizacion-pagos/realizar-pago',        component: RealizarPagoComponent,        canActivate: [roleGuard], data: { roles: ['cliente'] } },
 
       // ── Comunicación ───────────────────────────────────────
-      { path: 'comunicacion/chat',             component: ChatComponent,           canActivate: [roleGuard], data: { roles: ['cliente', 'taller', 'tecnico'] } },
-      { path: 'comunicacion/notificaciones',   component: NotificacionesComponent, canActivate: [roleGuard], data: { roles: ['cliente', 'taller'] } },
-      { path: 'comunicacion/ver-tecnico-mapa', component: DashboardHomeComponent,  canActivate: [roleGuard], data: { roles: ['cliente'] } },
+      { path: 'comunicacion/chat',             component: ChatComponent,             canActivate: [roleGuard], data: { roles: ['cliente', 'taller', 'tecnico'] } },
+      { path: 'comunicacion/notificaciones',   component: NotificacionesComponent,   canActivate: [roleGuard], data: { roles: ['cliente', 'taller'] } },
+      { path: 'comunicacion/ver-tecnico-mapa', component: VerTecnicoMapaComponent,   canActivate: [roleGuard], data: { roles: ['cliente'] } },
 
       // ── Reportes ───────────────────────────────────────────
-      { path: 'reportes/auditoria',           component: AuditoriaComponent,    canActivate: [roleGuard], data: { roles: ['admin'] } },
+      { path: 'reportes/auditoria',           component: AuditoriaComponent,         canActivate: [roleGuard], data: { roles: ['admin'] } },
       { path: 'reportes/historial-servicios', component: HistorialServiciosComponent, canActivate: [roleGuard], data: { roles: ['cliente', 'taller'] } },
-      { path: 'reportes/metricas-taller',     component: MetricasTallerComponent, canActivate: [roleGuard], data: { roles: ['taller'] } },
-      { path: 'reportes/metricas-globales',   component: MetricasGlobalesComponent, canActivate: [roleGuard], data: { roles: ['admin'] } },
-      { path: 'reportes/calificar-servicio',  component: CalificarServicioComponent, canActivate: [roleGuard], data: { roles: ['cliente'] } },
+      { path: 'reportes/metricas-taller',     component: MetricasTallerComponent,     canActivate: [roleGuard], data: { roles: ['taller'] } },
+      { path: 'reportes/metricas-globales',   component: MetricasGlobalesComponent,   canActivate: [roleGuard], data: { roles: ['admin'] } },
+      { path: 'reportes/calificar-servicio',  component: CalificarServicioComponent,  canActivate: [roleGuard], data: { roles: ['cliente'] } },
+      { path: 'reportes/recordatorios',       component: RecordatoriosComponent,      canActivate: [roleGuard], data: { roles: ['cliente'] } },
+      { path: 'reportes/reporte-taller',      component: ReporteTallerComponent,      canActivate: [roleGuard], data: { roles: ['taller'] } },
 
       // ── Stubs catch-all (rutas no implementadas aún) ───────
       { path: 'emergencias/:cu',       component: DashboardHomeComponent },

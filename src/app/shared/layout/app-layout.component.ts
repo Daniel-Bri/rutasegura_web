@@ -37,7 +37,9 @@ export class AppLayoutComponent {
       icon: 'emergency',
       items: [
         { label: 'Reportar Emergencia',  route: '/app/emergencias/reportar-emergencia', roles: ['cliente'] },
+        { label: 'Botón SOS',            route: '/app/emergencias/boton-sos',           roles: ['cliente'] },
         { label: 'Enviar Ubicación GPS', route: '/app/emergencias/enviar-ubicacion',    roles: ['cliente'] },
+        { label: 'Agregar Descripción',  route: '/app/emergencias/agregar-descripcion', roles: ['cliente'] },
         { label: 'Adjuntar Fotos',       route: '/app/emergencias/adjuntar-fotos',      roles: ['cliente'] },
         { label: 'Enviar Audio',         route: '/app/emergencias/enviar-audio',        roles: ['cliente'] },
       ],
@@ -47,10 +49,13 @@ export class AppLayoutComponent {
       label: 'Solicitudes',
       icon: 'assignment',
       items: [
-        { label: 'Ver Disponibles',   route: '/app/solicitudes/ver-solicitudes-disponibles', roles: ['taller'] },
-        { label: 'Ver Estado',        route: '/app/solicitudes/ver-estado-solicitud',        roles: ['cliente'] },
-        { label: 'Detalle Incidente', route: '/app/solicitudes/ver-detalle-incidente',       roles: ['taller'] },
-        { label: 'Cancelar Solicitud',route: '/app/solicitudes/cancelar-solicitud',          roles: ['cliente'] },
+        { label: 'Ver Disponibles',    route: '/app/solicitudes/ver-solicitudes-disponibles', roles: ['taller'] },
+        { label: 'Aceptar Solicitud', route: '/app/solicitudes/aceptar-solicitud',          roles: ['taller'] },
+        { label: 'Rechazar Solicitud',route: '/app/solicitudes/rechazar-solicitud',         roles: ['taller'] },
+        { label: 'Ver Estado',        route: '/app/solicitudes/ver-estado-solicitud',       roles: ['cliente'] },
+        { label: 'Cancelar Solicitud',route: '/app/solicitudes/cancelar-solicitud',         roles: ['cliente'] },
+        { label: 'Verificar Llegada', route: '/app/solicitudes/verificar-llegada',          roles: ['cliente'] },
+        { label: 'Detalle Incidente', route: '/app/solicitudes/ver-detalle-incidente',      roles: ['taller'] },
       ],
     },
     {
@@ -93,7 +98,9 @@ export class AppLayoutComponent {
       items: [
         { label: 'Historial Servicios', route: '/app/reportes/historial-servicios', roles: ['cliente', 'taller'] },
         { label: 'Calificar Servicio',  route: '/app/reportes/calificar-servicio',  roles: ['cliente'] },
+        { label: 'Recordatorios',       route: '/app/reportes/recordatorios',       roles: ['cliente'] },
         { label: 'Métricas Taller',     route: '/app/reportes/metricas-taller',     roles: ['taller'] },
+        { label: 'Reporte del Taller',  route: '/app/reportes/reporte-taller',      roles: ['taller'] },
         { label: 'Métricas Globales',   route: '/app/reportes/metricas-globales',   roles: ['admin'] },
         { label: 'Auditoría',           route: '/app/reportes/auditoria',           roles: ['admin'] },
       ],
