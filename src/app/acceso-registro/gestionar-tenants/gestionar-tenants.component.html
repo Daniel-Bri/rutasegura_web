@@ -1,0 +1,392 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Gestionar Tenants</h1>
+    <p class="page-sub">Administra los tenants registrados en la plataforma</p>
+  </div>
+  <button class="gt-btn gt-btn-primary" (click)="mostrarForm = !mostrarForm">
+    <span class="material-symbols-outlined">{{ mostrarForm ? 'close' : 'add' }}</span>
+    {{ mostrarForm ? 'Cancelar' : 'Nuevo Tenant' }}
+  </button>
+</div>
+
+<!-- Alerta de resultado -->
+@if (msg) {
+  <div [class]="msg.tipo === 'ok' ? 'alert-success' : 'alert-danger'"
+       style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1.25rem;">
+    <span class="material-symbols-outlined" style="font-size:18px;">
+      {{ msg.tipo === 'ok' ? 'check_circle' : 'error' }}
+    </span>
+    {{ msg.texto }}
+  </div>
+}
+
+<!-- Formulario nuevo tenant -->
+@if (mostrarForm) {
+  <div class="form-card" style="max-width:100%;margin-bottom:1.75rem;">
+    <p class="section-title">Datos del nuevo tenant</p>
+    <form (ngSubmit)="crearTenant()">
+      <div class="form-row">
+        <div class="field">
+          <label>Nombre *</label>
+          <input type="text" [(ngModel)]="form.nombre" name="nombre"
+                 (ngModelChange)="slugDesdeNombre()" placeholder="Ej: Mi Empresa S.A." required>
+        </div>
+        <div class="field">
+          <label>Slug *</label>
+          <input type="text" [(ngModel)]="form.slug" name="slug"
+                 placeholder="mi_empresa" required style="font-family:monospace;">
+          <span style="font-size:0.75rem;color:#6B7280;margin-top:0.2rem;display:block;">
+            Solo minúsculas, números, guión y guión bajo
+          </span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Descripción</label>
+        <input type="text" [(ngModel)]="form.descripcion" name="descripcion"
+               placeholder="Descripción opcional">
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="mostrarForm = false">Cancelar</button>
+        <button type="submit" class="btn-primary"
+                style="width:auto;padding:0.72rem 1.5rem;margin:0;"
+                [disabled]="guardando || !form.nombre || !form.slug">
+          @if (guardando) { <span class="spinner"></span>&nbsp;Guardando… }
+          @else { Crear Tenant }
+        </button>
+      </div>
+    </form>
+  </div>
+}
+
+<!-- Lista -->
+@if (loading) {
+  <div class="loading-row">
+    <span class="spinner-dark"></span>&nbsp;Cargando tenants…
+  </div>
+} @else if (tenants.length === 0) {
+  <div class="empty-state">
+    <span class="material-symbols-outlined" style="font-size:2.5rem;">business</span>
+    <p>No hay tenants registrados.</p>
+  </div>
+} @else {
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Slug</th>
+          <th>Descripción</th>
+          <th>Estado</th>
+          <th>Creado</th>
+          <th style="min-width:200px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (t of tenants; track t.id) {
+
+          <tr [style.opacity]="!t.activo ? '0.55' : '1'">
+            <td class="td-name">
+              @if (editando === t.id) {
+                <input class="gt-input-inline" [(ngModel)]="editForm.nombre" name="editNombre">
+              } @else {
+                {{ t.nombre }}
+              }
+            </td>
+            <td>
+              <span class="badge badge-muted" style="font-family:monospace;">{{ t.slug }}</span>
+            </td>
+            <td style="color:#6B7280;font-size:0.85rem;max-width:220px;">
+              @if (editando === t.id) {
+                <input class="gt-input-inline" [(ngModel)]="editForm.descripcion"
+                       name="editDesc" placeholder="Descripción">
+              } @else {
+                {{ t.descripcion ?? '—' }}
+              }
+            </td>
+            <td>
+              @if (editando === t.id) {
+                <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;cursor:pointer;white-space:nowrap;">
+                  <input type="checkbox" [(ngModel)]="editForm.activo" name="editActivo">
+                  Activo
+                </label>
+              } @else {
+                <span class="badge" [class.badge-success]="t.activo" [class.badge-muted]="!t.activo">
+                  {{ t.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              }
+            </td>
+            <td class="td-date">{{ t.created_at | date:'dd/MM/yyyy' }}</td>
+            <td>
+              @if (editando === t.id) {
+                <div class="action-btns">
+                  <button class="btn-approve" (click)="guardarEdicion(t.id)">Guardar</button>
+                  <button class="btn-reject"  (click)="editando = null">Cancelar</button>
+                </div>
+              } @else {
+                <div class="action-btns">
+                  <button class="gt-btn gt-btn-ghost" (click)="iniciarEdicion(t)">
+                    <span class="material-symbols-outlined">edit</span> Editar
+                  </button>
+                  <button class="gt-btn" [class.gt-btn-blue]="detalle?.id !== t.id"
+                          [class.gt-btn-ghost]="detalle?.id === t.id"
+                          (click)="abrirDetalle(t.id)">
+                    <span class="material-symbols-outlined">
+                      {{ detalle?.id === t.id ? 'expand_less' : 'group' }}
+                    </span>
+                    {{ detalle?.id === t.id ? 'Cerrar' : 'Miembros' }}
+                  </button>
+                  @if (t.slug !== 'default') {
+                    <button class="gt-btn gt-btn-danger" (click)="desactivar(t.id, t.nombre)"
+                            title="Desactivar">
+                      <span class="material-symbols-outlined">block</span>
+                    </button>
+                  }
+                </div>
+              }
+            </td>
+          </tr>
+
+          <!-- Detalle expandible -->
+          @if (detalle?.id === t.id) {
+            <tr class="gt-detail-row">
+              <td colspan="6" style="padding:0;">
+                @if (loadingDetalle) {
+                  <div class="loading-row" style="padding:1rem 1.5rem;">
+                    <span class="spinner-dark"></span>&nbsp;Cargando miembros…
+                  </div>
+                } @else {
+                  <div class="gt-detail-grid">
+
+                    <!-- Usuarios -->
+                    <div class="gt-section">
+                      <div class="gt-section-title">
+                        <span class="material-symbols-outlined">group</span>
+                        Usuarios asignados
+                        <span class="badge badge-primary" style="font-size:0.72rem;margin-left:0.25rem;">
+                          {{ detalle!.usuarios.length }}
+                        </span>
+                      </div>
+
+                      <div style="margin-bottom:0.75rem;">
+                        <button class="gt-btn gt-btn-outline" style="font-size:0.8rem;"
+                                (click)="asignandoUsuario = !asignandoUsuario; asignandoUsuario && cargarUsuariosDisponibles()">
+                          <span class="material-symbols-outlined">person_add</span>
+                          {{ asignandoUsuario ? 'Cancelar' : 'Asignar usuario' }}
+                        </button>
+                      </div>
+
+                      @if (asignandoUsuario) {
+                        <div class="gt-assign-panel">
+                          <select class="gt-select" [(ngModel)]="usuarioIdSeleccionado" name="selUsuario">
+                            <option [ngValue]="null">— Seleccionar usuario —</option>
+                            @for (u of todosUsuarios; track u.id) {
+                              <option [ngValue]="u.id">
+                                {{ u.username }}{{ u.full_name ? ' · ' + u.full_name : '' }} ({{ roleLabel(u.role) }})
+                              </option>
+                            }
+                          </select>
+                          <button class="btn-approve" [disabled]="!usuarioIdSeleccionado"
+                                  (click)="asignarUsuario(t.id)">
+                            Confirmar
+                          </button>
+                        </div>
+                      }
+
+                      @if (detalle!.usuarios.length === 0) {
+                        <p class="gt-empty">Sin usuarios asignados.</p>
+                      } @else {
+                        <table class="data-table">
+                          <thead>
+                            <tr>
+                              <th>Usuario</th>
+                              <th>Nombre</th>
+                              <th>Rol</th>
+                              <th></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (u of detalle!.usuarios; track u.id) {
+                              <tr>
+                                <td style="font-weight:600;">{{ u.username }}</td>
+                                <td style="color:#6B7280;font-size:0.83rem;">{{ u.full_name ?? '—' }}</td>
+                                <td>
+                                  <span class="badge" [ngClass]="roleClass(u.role)">{{ roleLabel(u.role) }}</span>
+                                </td>
+                                <td>
+                                  <button class="btn-reject" style="padding:0.28rem 0.7rem;font-size:0.78rem;"
+                                          (click)="removerUsuario(t.id, u.id)">
+                                    Quitar
+                                  </button>
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                    </div>
+
+                    <!-- Talleres -->
+                    <div class="gt-section gt-section-right">
+                      <div class="gt-section-title">
+                        <span class="material-symbols-outlined">handyman</span>
+                        Talleres asignados
+                        <span class="badge badge-primary" style="font-size:0.72rem;margin-left:0.25rem;">
+                          {{ detalle!.talleres.length }}
+                        </span>
+                      </div>
+
+                      <div style="margin-bottom:0.75rem;">
+                        <button class="gt-btn gt-btn-outline" style="font-size:0.8rem;"
+                                (click)="asignandoTaller = !asignandoTaller; asignandoTaller && cargarTalleresDisponibles()">
+                          <span class="material-symbols-outlined">add_business</span>
+                          {{ asignandoTaller ? 'Cancelar' : 'Asignar taller' }}
+                        </button>
+                      </div>
+
+                      @if (asignandoTaller) {
+                        <div class="gt-assign-panel">
+                          <select class="gt-select" [(ngModel)]="tallerIdSeleccionado" name="selTaller">
+                            <option [ngValue]="null">— Seleccionar taller —</option>
+                            @for (ta of todosLostalleres; track ta.id) {
+                              <option [ngValue]="ta.id">{{ ta.nombre }} ({{ ta.estado }})</option>
+                            }
+                          </select>
+                          <button class="btn-approve" [disabled]="!tallerIdSeleccionado"
+                                  (click)="asignarTaller(t.id)">
+                            Confirmar
+                          </button>
+                        </div>
+                      }
+
+                      @if (detalle!.talleres.length === 0) {
+                        <p class="gt-empty">Sin talleres asignados.</p>
+                      } @else {
+                        <table class="data-table">
+                          <thead>
+                            <tr>
+                              <th>Nombre</th>
+                              <th>Estado</th>
+                              <th>Disponible</th>
+                              <th></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (ta of detalle!.talleres; track ta.id) {
+                              <tr>
+                                <td style="font-weight:600;">{{ ta.nombre }}</td>
+                                <td>
+                                  <span class="badge"
+                                        [class.badge-success]="ta.estado === 'aprobado'"
+                                        [class.badge-warning]="ta.estado === 'pendiente'"
+                                        [class.badge-danger]="ta.estado === 'rechazado'">
+                                    {{ ta.estado }}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span class="badge"
+                                        [class.badge-success]="ta.disponible"
+                                        [class.badge-muted]="!ta.disponible">
+                                    {{ ta.disponible ? 'Disponible' : 'No disponible' }}
+                                  </span>
+                                </td>
+                                <td>
+                                  <button class="btn-reject" style="padding:0.28rem 0.7rem;font-size:0.78rem;"
+                                          (click)="removerTaller(t.id, ta.id)">
+                                    Quitar
+                                  </button>
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                    </div>
+
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<style>
+.gt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.38rem 0.75rem;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.gt-btn .material-symbols-outlined { font-size: 16px; }
+
+.gt-btn-primary  { background:#2563EB; color:#fff; border-color:#2563EB; }
+.gt-btn-primary:hover { background:#1E3A8A; }
+
+.gt-btn-blue     { background:#EFF6FF; color:#2563EB; border-color:#BFDBFE; }
+.gt-btn-blue:hover { background:#DBEAFE; }
+
+.gt-btn-outline  { background:#fff; color:#2563EB; border-color:#BFDBFE; }
+.gt-btn-outline:hover { background:#EFF6FF; }
+
+.gt-btn-ghost    { background:transparent; color:#4B5563; border-color:#E5E7EB; }
+.gt-btn-ghost:hover { background:#F3F4F6; }
+
+.gt-btn-danger   { background:#FEE2E2; color:#991B1B; border-color:#FCA5A5; }
+.gt-btn-danger:hover { background:#FECACA; }
+
+.gt-input-inline {
+  width:100%; padding:0.32rem 0.55rem;
+  border:1.5px solid #BFDBFE; border-radius:6px;
+  font-size:0.85rem; background:#fff; outline:none;
+}
+.gt-input-inline:focus { border-color:#2563EB; }
+
+.gt-detail-row td { background:#F9FAFB; }
+
+.gt-detail-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  border-top:2px solid #E5E7EB;
+}
+@media(max-width:860px){
+  .gt-detail-grid { grid-template-columns:1fr; }
+  .gt-section-right { border-left:none !important; border-top:1px solid #E5E7EB; }
+}
+
+.gt-section { padding:1.1rem 1.25rem; }
+.gt-section-right { border-left:1px solid #E5E7EB; }
+
+.gt-section-title {
+  display:flex; align-items:center; gap:0.35rem;
+  font-weight:700; font-size:0.875rem; color:#1F2937;
+  margin-bottom:0.75rem;
+}
+.gt-section-title .material-symbols-outlined { font-size:18px; color:#2563EB; }
+
+.gt-assign-panel {
+  display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;
+  padding:0.65rem 0.85rem; margin-bottom:0.75rem;
+  background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px;
+}
+
+.gt-select {
+  flex:1; min-width:160px;
+  padding:0.45rem 0.65rem;
+  border:1.5px solid #D1D5DB; border-radius:7px;
+  font-size:0.85rem; background:#fff; outline:none;
+}
+.gt-select:focus { border-color:#2563EB; }
+
+.gt-empty { color:#9CA3AF; font-size:0.85rem; padding:0.5rem 0; }
+</style>

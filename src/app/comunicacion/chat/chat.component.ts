@@ -4,12 +4,14 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { interval, Subscription, switchMap, catchError, of } from 'rxjs';
+import { Subscription } from 'rxjs';
 
 import { AuthService } from '../../acceso-registro/auth.service';
 import { TecnicoService, AsignacionResponse } from '../../talleres-tecnicos/tecnico.service';
 import { ComunicacionService, MensajeResponse } from '../comunicacion.service';
 import { SolicitudService } from '../../solicitudes/solicitud.service';
+import { WebSocketService } from '../../core/services/websocket.service';
+import { OfflineQueueService } from '../../core/services/offline-queue.service';
 
 @Component({
   selector: 'app-chat',
@@ -32,7 +34,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   errorAsignaciones = '';
   errorMensajes = '';
 
-  private pollSub?: Subscription;
+  private wsSub?: Subscription;
   private debeScrollear = false;
 
   constructor(
@@ -40,6 +42,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     private tecnicoSvc: TecnicoService,
     private comunicacionSvc: ComunicacionService,
     private solicitudSvc: SolicitudService,
+    private wsSvc: WebSocketService,
+    private offlineQueue: OfflineQueueService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -47,6 +51,15 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     const user = this.auth.getUser();
     this.currentUserId = user?.id ?? null;
     this.cargarAsignaciones();
+    this.wsSub = this.wsSvc.on('nuevo_mensaje').subscribe((msg: MensajeResponse) => {
+      if (this.asignacionSeleccionada && msg.asignacion_id === this.asignacionSeleccionada.id) {
+        if (!this.mensajes.find(m => m.id === msg.id)) {
+          this.mensajes = [...this.mensajes, msg];
+          this.debeScrollear = true;
+          this.cdr.detectChanges();
+        }
+      }
+    });
   }
 
   ngAfterViewChecked(): void {
@@ -57,7 +70,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   ngOnDestroy(): void {
-    this.pollSub?.unsubscribe();
+    this.wsSub?.unsubscribe();
   }
 
   cargarAsignaciones(): void {
@@ -87,33 +100,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.asignacionSeleccionada = asig;
     this.mensajes = [];
     this.errorMensajes = '';
-    this.pollSub?.unsubscribe();
-    this.iniciarPolling(asig.id);
-  }
-
-  private iniciarPolling(asignacionId: number): void {
-    this.cargarMensajes(asignacionId);
-    this.pollSub = interval(3000)
-      .pipe(
-        switchMap(() =>
-          this.comunicacionSvc.listarMensajes(asignacionId).pipe(
-            catchError(() => of(null)),
-          ),
-        ),
-      )
-      .subscribe((msgs) => {
-        if (msgs !== null) {
-          const nuevosIds = new Set(msgs.map((m) => m.id));
-          const hayNuevos = msgs.length !== this.mensajes.length ||
-            msgs.some((m) => !this.mensajes.find((e) => e.id === m.id));
-          if (hayNuevos) {
-            this.mensajes = msgs;
-            this.debeScrollear = true;
-            this.cdr.detectChanges();
-          }
-          void nuevosIds;
-        }
-      });
+    this.cargarMensajes(asig.id);
   }
 
   private cargarMensajes(asignacionId: number): void {
@@ -147,6 +134,13 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         },
         error: () => {
           this.enviando = false;
+          if (!navigator.onLine && this.asignacionSeleccionada) {
+            this.offlineQueue.encolar('/api/comunicacion/mensajes', 'POST',
+              { asignacion_id: this.asignacionSeleccionada.id, contenido: texto },
+              `Mensaje: "${texto.substring(0, 30)}…"`
+            );
+            this.nuevoMensaje = '';
+          }
           this.cdr.detectChanges();
         },
       });

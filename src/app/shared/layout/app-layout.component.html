@@ -99,9 +99,37 @@
 
   <!-- ── CONTENIDO PRINCIPAL ────────────────────── -->
   <main class="main-content">
+    <!-- Banner offline -->
+    @if (!isOnline) {
+      <div class="offline-banner">
+        <span class="material-symbols-outlined" style="font-size:18px;">cloud_off</span>
+        Sin conexión a internet — las acciones se guardarán localmente
+        @if (pendientesOffline > 0) {
+          <span class="offline-badge">{{ pendientesOffline }} pendiente{{ pendientesOffline > 1 ? 's' : '' }}</span>
+        }
+      </div>
+    }
+    @if (isOnline && pendientesOffline > 0) {
+      <div class="sync-banner">
+        <span class="material-symbols-outlined" style="font-size:18px;">sync</span>
+        Sincronizando {{ pendientesOffline }} acción{{ pendientesOffline > 1 ? 'es' : '' }} pendiente{{ pendientesOffline > 1 ? 's' : '' }}…
+      </div>
+    }
     <div class="content-area">
       <router-outlet />
     </div>
   </main>
+
+  <!-- ── TOAST NOTIFICACIÓN PUSH ── -->
+  @if (notifToast) {
+    <div class="ws-toast" (click)="cerrarToast()">
+      <span class="material-symbols-outlined ws-toast-icon">notifications_active</span>
+      <div class="ws-toast-body">
+        <strong>{{ notifToast.titulo }}</strong>
+        <span>{{ notifToast.mensaje }}</span>
+      </div>
+      <span class="material-symbols-outlined ws-toast-close">close</span>
+    </div>
+  }
 
 </div>

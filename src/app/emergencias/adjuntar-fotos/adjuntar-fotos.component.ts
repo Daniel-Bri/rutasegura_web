@@ -1,6 +1,6 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../acceso-registro/auth.service';
 import { environment } from '../../../environments/environment';
@@ -18,7 +18,7 @@ interface AnalisisIA {
 @Component({
   selector: 'app-adjuntar-fotos',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   templateUrl: './adjuntar-fotos.component.html',
 })
 export class AdjuntarFotosComponent {

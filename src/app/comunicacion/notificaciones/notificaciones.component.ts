@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { TecnicoService, AsignacionResponse } from '../../talleres-tecnicos/tecnico.service';
+import { WebSocketService } from '../../core/services/websocket.service';
 
 @Component({
   selector: 'app-notificaciones',
@@ -12,17 +14,19 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
   asignaciones: AsignacionResponse[] = [];
   loading = false;
   errorMsg = '';
-  private _poll?: ReturnType<typeof setInterval>;
+  private wsSub?: Subscription;
 
-  constructor(private svc: TecnicoService, private cdr: ChangeDetectorRef) {}
+  constructor(private svc: TecnicoService, private wsSvc: WebSocketService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.cargar();
-    this._poll = setInterval(() => this.cargar(true), 30000);
+    this.wsSub = this.wsSvc.on('estado_asignacion').subscribe(() => {
+      this.cargar(true);
+    });
   }
 
   ngOnDestroy(): void {
-    if (this._poll) clearInterval(this._poll);
+    this.wsSub?.unsubscribe();
   }
 
   cargar(silencioso = false): void {

@@ -1,7 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../acceso-registro/auth.service';
+import { WebSocketService } from '../../core/services/websocket.service';
+import { OfflineQueueService } from '../../core/services/offline-queue.service';
 import { type AppRole } from '../../core/permissions/permissions.config';
 
 interface NavItem    { label: string; route: string; roles: AppRole[]; }
@@ -14,9 +17,12 @@ interface NavSection { id: string; label: string; icon: string; items: NavItem[]
   templateUrl: './app-layout.component.html',
   styleUrl: './app-layout.component.css',
 })
-export class AppLayoutComponent {
+export class AppLayoutComponent implements OnInit, OnDestroy {
   collapsed = signal(false);
   openSections = new Set<string>();
+  notifToast: { titulo: string; mensaje: string } | null = null;
+  private wsSub?: Subscription;
+  private toastTimer: any;
 
   // Todos los módulos siempre visibles — el guard + lógica de bloqueo maneja acceso
   readonly ALL_NAV_SECTIONS: NavSection[] = [
@@ -28,6 +34,7 @@ export class AppLayoutComponent {
         { label: 'Mis Vehículos',      route: '/app/acceso-registro/gestionar-vehiculos',  roles: ['cliente'] },
         { label: 'Registrar Taller',   route: '/app/acceso-registro/registrar-taller',     roles: ['taller'] },
         { label: 'Gestionar Usuarios', route: '/app/acceso-registro/gestionar-usuarios',   roles: ['admin'] },
+        { label: 'Gestionar Tenants',  route: '/app/acceso-registro/gestionar-tenants',   roles: ['admin'] },
         { label: 'Aprobar Talleres',   route: '/app/acceso-registro/aprobar-talleres',     roles: ['admin'] },
       ],
     },
@@ -107,7 +114,53 @@ export class AppLayoutComponent {
     },
   ];
 
-  constructor(private auth: AuthService, readonly router: Router) {}
+  isOnline = true;
+  pendientesOffline = 0;
+  private onlineSub?: Subscription;
+  private pendientesSub?: Subscription;
+
+  constructor(
+    private auth: AuthService,
+    readonly router: Router,
+    private wsSvc: WebSocketService,
+    public offlineSvc: OfflineQueueService,
+  ) {}
+
+  private wsMsgSub?: Subscription;
+
+  ngOnInit(): void {
+    this.wsSvc.conectar();
+    this.wsSub = this.wsSvc.on('notificacion').subscribe((payload) => {
+      this.mostrarToast(payload.titulo, payload.mensaje);
+    });
+    this.wsMsgSub = this.wsSvc.on('nuevo_mensaje').subscribe((payload) => {
+      if (!this.router.url.includes('/comunicacion/chat')) {
+        const remitente = payload.remitente ?? 'Nuevo mensaje';
+        this.mostrarToast(`Mensaje de ${remitente}`, payload.contenido);
+      }
+    });
+    this.onlineSub = this.offlineSvc.online$.subscribe(v => this.isOnline = v);
+    this.pendientesSub = this.offlineSvc.pendientes$.subscribe(v => this.pendientesOffline = v);
+  }
+
+  ngOnDestroy(): void {
+    this.wsSub?.unsubscribe();
+    this.wsMsgSub?.unsubscribe();
+    this.onlineSub?.unsubscribe();
+    this.pendientesSub?.unsubscribe();
+    clearTimeout(this.toastTimer);
+  }
+
+  private mostrarToast(titulo: string, mensaje: string): void {
+    this.notifToast = { titulo, mensaje };
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => { this.notifToast = null; }, 6000);
+  }
+
+  cerrarToast(): void {
+    this.notifToast = null;
+    clearTimeout(this.toastTimer);
+  }
 
   get user()         { return this.auth.getUser(); }
   get userRole()     { return (this.user?.role ?? 'cliente') as AppRole; }
@@ -149,6 +202,7 @@ export class AppLayoutComponent {
   }
 
   logout() {
+    this.wsSvc.desconectar();
     this.auth.logout();
     this.router.navigate(['/login']);
   }

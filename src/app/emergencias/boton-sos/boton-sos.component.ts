@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { OfflineQueueService } from '../../core/services/offline-queue.service';
 
 @Component({
   selector: 'app-boton-sos',
@@ -15,7 +16,7 @@ export class BotonSosComponent {
   coordenadas: { lat: number; lng: number } | null = null;
   obteniendo = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private offlineQueue: OfflineQueueService) {}
 
   obtenerUbicacion(): void {
     if (!navigator.geolocation) {
@@ -55,7 +56,12 @@ export class BotonSosComponent {
       },
       error: (e) => {
         this.enviando = false;
-        this.msg = { tipo: 'error', texto: e?.error?.detail ?? 'No se pudo enviar el SOS.' };
+        if (!navigator.onLine) {
+          this.offlineQueue.encolar('/api/emergencias/sos', 'POST', body, 'SOS de emergencia');
+          this.msg = { tipo: 'ok', texto: 'Sin conexión — SOS guardado localmente. Se enviará al recuperar internet.' };
+        } else {
+          this.msg = { tipo: 'error', texto: e?.error?.detail ?? 'No se pudo enviar el SOS.' };
+        }
       },
     });
   }

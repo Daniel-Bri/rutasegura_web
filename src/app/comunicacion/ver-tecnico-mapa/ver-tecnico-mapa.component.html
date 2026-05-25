@@ -1,31 +1,68 @@
-<div class="page-container">
-  <h2 class="page-title">Ubicación del Técnico</h2>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Ubicación del Técnico</h1>
+    <p class="page-sub">Seguimiento en tiempo real vía WebSocket</p>
+  </div>
+</div>
 
-  @if (!asignacionId && !loading) {
-    <p class="text-muted">No tienes ningún servicio activo en este momento.</p>
-  }
+@if (!asignacionId && !loading) {
+  <div class="empty-state">
+    <span class="material-symbols-outlined" style="font-size:2.5rem;">location_off</span>
+    <p>No tienes ningún servicio activo en este momento.</p>
+  </div>
+}
 
-  @if (loading) {
-    <p class="text-muted">Obteniendo ubicación...</p>
-  }
+@if (loading) {
+  <div class="loading-row"><span class="spinner-dark"></span>&nbsp;Obteniendo ubicación…</div>
+}
 
-  @if (error) {
-    <div class="alert alert-error">{{ error }}</div>
-  }
+@if (error) {
+  <div class="alert-danger" style="display:flex;align-items:center;gap:0.5rem;">
+    <span class="material-symbols-outlined" style="font-size:18px;">error</span>
+    {{ error }}
+  </div>
+}
 
-  @if (ubicacion) {
-    <div class="card">
-      <div class="card-body">
-        <p><strong>Latitud:</strong> {{ ubicacion.latitud }}</p>
-        <p><strong>Longitud:</strong> {{ ubicacion.longitud }}</p>
-        <p class="text-muted">
-          Actualizado: {{ ubicacion.updated_at | date:'HH:mm:ss' }}
-        </p>
-        <a [href]="mapsUrl!" target="_blank" class="btn btn-primary">
-          Ver en Google Maps
-        </a>
+@if (ubicacion) {
+  <div class="info-card">
+    <div class="info-card-header">
+      <span class="material-symbols-outlined" style="font-size:28px;color:#2563EB;">engineering</span>
+      <div>
+        <div class="info-card-title">{{ ubicacion.nombre }}</div>
+        <div class="info-card-sub">{{ ubicacion.estado_asignacion.replace('_', ' ') | titlecase }}
+          @if (ubicacion.eta) { — ETA: {{ ubicacion.eta }} min }
+        </div>
       </div>
     </div>
-    <p class="text-muted" style="margin-top:8px">La ubicación se actualiza automáticamente cada 20 segundos.</p>
-  }
-</div>
+
+    <div class="stats-row" style="margin-bottom:1rem;">
+      <div class="stat-box">
+        <span class="stat-val" style="font-size:1rem;">{{ ubicacion.latitud ?? '—' }}</span>
+        <span class="stat-lbl">Latitud</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-val" style="font-size:1rem;">{{ ubicacion.longitud ?? '—' }}</span>
+        <span class="stat-lbl">Longitud</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-val" style="font-size:1rem;">
+          {{ ubicacion.ultima_actualizacion ? (ubicacion.ultima_actualizacion | date:'HH:mm:ss') : '—' }}
+        </span>
+        <span class="stat-lbl">Actualizado</span>
+      </div>
+    </div>
+
+    @if (mapsUrl) {
+      <a [href]="mapsUrl" target="_blank" class="btn-primary"
+         style="display:inline-flex;align-items:center;gap:0.4rem;width:auto;padding:0.6rem 1.25rem;text-decoration:none;border-radius:8px;">
+        <span class="material-symbols-outlined" style="font-size:18px;">map</span>
+        Ver en Google Maps
+      </a>
+    }
+
+    <p style="margin-top:0.75rem;font-size:0.8rem;color:#9CA3AF;">
+      <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">sync</span>
+      Tiempo real — la ubicación se actualiza automáticamente vía WebSocket.
+    </p>
+  </div>
+}

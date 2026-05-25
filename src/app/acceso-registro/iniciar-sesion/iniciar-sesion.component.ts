@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { timeout, catchError, throwError } from 'rxjs';
 import { AuthService } from '../auth.service';
 
 @Component({
@@ -19,6 +20,7 @@ export class IniciarSesionComponent {
     private fb: FormBuilder,
     private auth: AuthService,
     private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {
     this.form = this.fb.group({
       email:    ['', [Validators.required, Validators.email]],
@@ -34,14 +36,23 @@ export class IniciarSesionComponent {
     this.loading = true;
     this.serverError = '';
 
-    this.auth.login(this.form.value).subscribe({
+    this.auth.login(this.form.value).pipe(
+      timeout(10_000),
+      catchError(err => {
+        if (err.name === 'TimeoutError') {
+          return throwError(() => ({ error: { detail: 'El servidor no responde. Verifica tu conexión.' } }));
+        }
+        return throwError(() => err);
+      }),
+    ).subscribe({
       next: () => {
         this.loading = false;
         this.router.navigate(['/app/dashboard']);
       },
       error: (err) => {
-        this.serverError = err.error?.detail ?? 'Error al iniciar sesión';
+        this.serverError = err.error?.detail ?? 'Credenciales incorrectas.';
         this.loading = false;
+        this.cdr.detectChanges();
       },
     });
   }

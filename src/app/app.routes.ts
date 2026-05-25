@@ -6,6 +6,7 @@ import { DashboardHomeComponent } from './dashboard/dashboard-home.component';
 import { RegistrarTallerComponent } from './acceso-registro/registrar-taller/registrar-taller.component';
 import { AprobarTalleresComponent } from './acceso-registro/aprobar-talleres/aprobar-talleres.component';
 import { GestionarUsuariosComponent } from './acceso-registro/gestionar-usuarios/gestionar-usuarios.component';
+import { GestionarTenantsComponent } from './acceso-registro/gestionar-tenants/gestionar-tenants.component';
 import { GestionarTecnicosComponent } from './talleres-tecnicos/gestionar-tecnicos/gestionar-tecnicos.component';
 import { GestionarDisponibilidadComponent } from './talleres-tecnicos/gestionar-disponibilidad/gestionar-disponibilidad.component';
 import { ActualizarEstadoServicioComponent } from './talleres-tecnicos/actualizar-estado-servicio/actualizar-estado-servicio.component';
@@ -65,6 +66,7 @@ export const routes: Routes = [
       { path: 'acceso-registro/registrar-taller',    component: RegistrarTallerComponent,    canActivate: [roleGuard], data: { roles: ['taller'] } },
       { path: 'acceso-registro/aprobar-talleres',    component: AprobarTalleresComponent,    canActivate: [roleGuard], data: { roles: ['admin'] } },
       { path: 'acceso-registro/gestionar-usuarios',  component: GestionarUsuariosComponent,  canActivate: [roleGuard], data: { roles: ['admin'] } },
+      { path: 'acceso-registro/gestionar-tenants',   component: GestionarTenantsComponent,   canActivate: [roleGuard], data: { roles: ['admin'] } },
       { path: 'acceso-registro/gestionar-vehiculos', component: GestionarVehiculosComponent, canActivate: [roleGuard], data: { roles: ['cliente'] } },
 
       // ── Emergencias (CU05–CU09) ────────────────────────────
