@@ -13,45 +13,81 @@ export class PushNotificationService {
 
   async inicializar(): Promise<void> {
     if (this.initialized) return;
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+
+    if (!('Notification' in window)) {
+      console.warn('[Push] El browser no soporta notificaciones');
+      return;
+    }
+    if (!('serviceWorker' in navigator)) {
+      console.warn('[Push] El browser no soporta Service Workers');
+      return;
+    }
 
     try {
+      // Pedir permiso
+      const permission = await Notification.requestPermission();
+      console.log('[Push] Permiso de notificaciones:', permission);
+      if (permission !== 'granted') return;
+
+      // Inicializar Firebase app
       const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
 
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') return;
+      // Registrar el Service Worker de Firebase
+      const registration = await navigator.serviceWorker.register(
+        '/firebase-messaging-sw.js',
+        { scope: '/' },
+      );
+      console.log('[Push] Service Worker registrado:', registration.scope);
 
-      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
+      // Obtener token FCM
+      const token = await getToken(messaging, {
+        vapidKey: VAPID_KEY,
+        serviceWorkerRegistration: registration,
+      });
 
-      if (token) {
-        await this.registrarToken(token);
-        this.initialized = true;
+      if (!token) {
+        console.warn('[Push] No se obtuvo token FCM');
+        return;
       }
 
-      // Notificaciones cuando la pestaña está activa (foreground)
+      console.log('[Push] Token FCM obtenido:', token.substring(0, 20) + '...');
+      await this.registrarToken(token);
+      this.initialized = true;
+
+      // Notificación cuando la pestaña está activa (foreground)
       onMessage(messaging, (payload) => {
+        console.log('[Push] Mensaje en foreground:', payload);
         const { title, body } = payload.notification ?? {};
         if (!title) return;
-        if (Notification.permission === 'granted') {
-          new Notification(title, { body: body ?? '', icon: '/favicon.ico' });
-        }
+        registration.showNotification(title, {
+          body: body ?? '',
+          icon: '/favicon.ico',
+          badge: '/favicon.ico',
+          data: payload.data ?? {},
+        });
       });
+
     } catch (err) {
-      console.warn('[Push] No se pudo inicializar Firebase Messaging:', err);
+      console.error('[Push] Error al inicializar:', err);
     }
   }
 
   private async registrarToken(token: string): Promise<void> {
     try {
       const authToken = localStorage.getItem('access_token');
-      if (!authToken) return;
+      if (!authToken) {
+        console.warn('[Push] Sin token de auth, no se puede registrar el token FCM');
+        return;
+      }
       await this.http.post(
         `${environment.apiUrl}/api/notificaciones/token`,
         { token, plataforma: 'web' },
         { headers: { Authorization: `Bearer ${authToken}` } },
       ).toPromise();
-    } catch { }
+      console.log('[Push] Token FCM registrado en el backend');
+    } catch (err) {
+      console.error('[Push] Error al registrar token en backend:', err);
+    }
   }
 }
