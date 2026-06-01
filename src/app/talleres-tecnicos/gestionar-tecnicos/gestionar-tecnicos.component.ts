@@ -6,6 +6,10 @@ import {
   TecnicoResponse,
   AsignacionResponse,
 } from '../tecnico.service';
+import { DataCacheService } from '../../core/services/data-cache.service';
+import { OfflineQueueService } from '../../core/services/offline-queue.service';
+
+const TTL_2MIN = 2 * 60 * 1000;
 
 type PanelMode = 'registrar' | 'editar' | null;
 
@@ -44,7 +48,12 @@ export class GestionarTecnicosComponent implements OnInit {
   // ── Desactivar ─────────────────────────────────────────
   desactivando: Record<number, boolean> = {};
 
-  constructor(private svc: TecnicoService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private svc: TecnicoService,
+    private cdr: ChangeDetectorRef,
+    private cache: DataCacheService,
+    private offlineQueue: OfflineQueueService,
+  ) {}
 
   ngOnInit(): void {
     this.cargarTecnicos();
@@ -52,10 +61,11 @@ export class GestionarTecnicosComponent implements OnInit {
   }
 
   // ── Carga de datos ─────────────────────────────────────
-  cargarTecnicos(): void {
+  cargarTecnicos(force = false): void {
     this.loadingTecnicos = true;
     this.errorTecnicos   = '';
-    this.svc.listar().subscribe({
+    if (force) this.cache.invalidate('tecnicos');
+    this.cache.get('tecnicos', TTL_2MIN, () => this.svc.listar()).subscribe({
       next: (data) => { this.tecnicos = data; this.loadingTecnicos = false; this.cdr.detectChanges(); },
       error: (err) => {
         this.errorTecnicos = err.error?.detail ?? 'Error al cargar técnicos';
@@ -65,10 +75,11 @@ export class GestionarTecnicosComponent implements OnInit {
     });
   }
 
-  cargarAsignaciones(): void {
+  cargarAsignaciones(force = false): void {
     this.loadingAsig = true;
     this.errorAsig   = '';
-    this.svc.listarAsignacionesPendientes().subscribe({
+    if (force) this.cache.invalidate('asignaciones-pendientes');
+    this.cache.get('asignaciones-pendientes', TTL_2MIN, () => this.svc.listarAsignacionesPendientes()).subscribe({
       next: (data) => { this.asignaciones = data; this.loadingAsig = false; this.cdr.detectChanges(); },
       error: (err) => {
         this.errorAsig = err.error?.detail ?? 'Error al cargar asignaciones';
@@ -116,9 +127,18 @@ export class GestionarTecnicosComponent implements OnInit {
     };
 
     if (this.panelMode === 'registrar') {
+      if (!this.offlineQueue.isOnline) {
+        this.offlineQueue.encolar('/api/talleres/tecnicos', 'POST', payload, `Registrar técnico: ${payload.nombre}`);
+        this.formSuccess = '📶 Sin conexión — se registrará al volver internet';
+        this.guardando = false;
+        setTimeout(() => this.cerrarPanel(), 2000);
+        this.cdr.detectChanges();
+        return;
+      }
       this.svc.registrar(payload).subscribe({
         next: (nuevo) => {
           this.tecnicos = [nuevo, ...this.tecnicos];
+          this.cache.invalidate('tecnicos');
           this.formSuccess = 'Técnico registrado correctamente';
           this.guardando = false;
           setTimeout(() => this.cerrarPanel(), 1500);
@@ -131,9 +151,18 @@ export class GestionarTecnicosComponent implements OnInit {
         },
       });
     } else {
+      if (!this.offlineQueue.isOnline) {
+        this.offlineQueue.encolar(`/api/talleres/tecnicos/${this.editandoId}`, 'PATCH', payload, `Editar técnico #${this.editandoId}`);
+        this.formSuccess = '📶 Sin conexión — se actualizará al volver internet';
+        this.guardando = false;
+        setTimeout(() => this.cerrarPanel(), 2000);
+        this.cdr.detectChanges();
+        return;
+      }
       this.svc.actualizar(this.editandoId!, payload).subscribe({
         next: (actualizado) => {
           this.tecnicos = this.tecnicos.map((t) => t.id === actualizado.id ? actualizado : t);
+          this.cache.invalidate('tecnicos');
           this.formSuccess = 'Técnico actualizado correctamente';
           this.guardando = false;
           setTimeout(() => this.cerrarPanel(), 1500);
@@ -170,10 +199,19 @@ export class GestionarTecnicosComponent implements OnInit {
     if (!tecnicoId) { this.asigMensaje[asig.id] = { tipo: 'error', texto: 'Selecciona un técnico' }; return; }
     this.asignandoId = asig.id;
 
+    if (!this.offlineQueue.isOnline) {
+      this.offlineQueue.encolar(`/api/talleres/asignaciones/${asig.id}/asignar-tecnico`, 'PATCH', { tecnico_id: tecnicoId }, `Asignar técnico a solicitud #${asig.id}`);
+      this.asigMensaje[asig.id] = { tipo: 'ok', texto: '📶 Sin conexión — se sincronizará al volver internet' };
+      this.asignandoId = null;
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.svc.asignarTecnico(asig.id, tecnicoId).subscribe({
       next: () => {
         this.asignaciones = this.asignaciones.filter((a) => a.id !== asig.id);
-        this.cargarTecnicos();
+        this.cache.invalidate('asignaciones-pendientes');
+        this.cargarTecnicos(true);
         this.asignandoId = null;
         this.cdr.detectChanges();
       },

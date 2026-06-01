@@ -1,6 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TecnicoService, TallerInfoResponse } from '../tecnico.service';
+import { DataCacheService } from '../../core/services/data-cache.service';
+import { OfflineQueueService } from '../../core/services/offline-queue.service';
 
 @Component({
   selector: 'app-gestionar-disponibilidad',
@@ -18,7 +20,12 @@ export class GestionarDisponibilidadComponent implements OnInit {
   errorMsg   = '';
   successMsg = '';
 
-  constructor(private svc: TecnicoService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private svc: TecnicoService,
+    private cdr: ChangeDetectorRef,
+    private cache: DataCacheService,
+    private offlineQueue: OfflineQueueService,
+  ) {}
 
   ngOnInit(): void {
     this.cargar();
@@ -27,7 +34,7 @@ export class GestionarDisponibilidadComponent implements OnInit {
   cargar(): void {
     this.loading  = true;
     this.errorMsg = '';
-    this.svc.getMiTaller().subscribe({
+    this.cache.get('mi-taller', 2 * 60 * 1000, () => this.svc.getMiTaller()).subscribe({
       next: (data) => {
         this.taller                 = data;
         this.disponibleSeleccionado = data.disponible;
@@ -51,10 +58,27 @@ export class GestionarDisponibilidadComponent implements OnInit {
     this.errorMsg   = '';
     this.successMsg = '';
 
+    if (!this.offlineQueue.isOnline) {
+      this.offlineQueue.encolar(
+        '/api/talleres/disponibilidad',
+        'PATCH',
+        { disponible: this.disponibleSeleccionado },
+        `Cambiar disponibilidad → ${this.disponibleSeleccionado ? 'Disponible' : 'No disponible'}`,
+      );
+      if (this.taller) this.taller = { ...this.taller, disponible: this.disponibleSeleccionado };
+      this.cache.invalidate('mi-taller');
+      this.successMsg = '📶 Sin conexión — se sincronizará al volver internet';
+      this.guardando  = false;
+      this.cdr.detectChanges();
+      setTimeout(() => { this.successMsg = ''; this.cdr.detectChanges(); }, 4000);
+      return;
+    }
+
     this.svc.actualizarDisponibilidad(this.disponibleSeleccionado).subscribe({
       next: (data) => {
         this.taller                 = data;
         this.disponibleSeleccionado = data.disponible;
+        this.cache.invalidate('mi-taller');
         this.successMsg             = `Disponibilidad actualizada: taller marcado como ${data.disponible ? 'Disponible' : 'No disponible'}`;
         this.guardando              = false;
         this.cdr.detectChanges();

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TecnicoService, AsignacionResponse } from '../tecnico.service';
 import { OfflineQueueService } from '../../core/services/offline-queue.service';
+import { DataCacheService } from '../../core/services/data-cache.service';
 
 interface EstadoInfo {
   label: string;
@@ -56,6 +57,7 @@ export class ActualizarEstadoServicioComponent implements OnInit {
     private svc: TecnicoService,
     private cdr: ChangeDetectorRef,
     private offlineQueue: OfflineQueueService,
+    private cache: DataCacheService,
   ) {}
 
   ngOnInit(): void { this.cargar(); }
@@ -63,7 +65,7 @@ export class ActualizarEstadoServicioComponent implements OnInit {
   cargar(): void {
     this.loading  = true;
     this.errorMsg = '';
-    this.svc.listarActivas().subscribe({
+    this.cache.get('asignaciones-activas', 30_000, () => this.svc.listarActivas()).subscribe({
       next: (data) => {
         this.asignaciones = data;
         data.forEach((a) => {
@@ -121,6 +123,7 @@ export class ActualizarEstadoServicioComponent implements OnInit {
           this.estadoSel[actualizada.id] = opts[0] ?? '';
           this.obsTexto[actualizada.id]  = '';
         }
+        this.cache.invalidate('asignaciones-activas');
         this.mensajeFila[a.id] = { tipo: 'ok', texto: `Estado actualizado a: ${ESTADO_INFO[actualizada.estado]?.label}` };
         this.procesando[a.id]  = false;
         this.cdr.detectChanges();
