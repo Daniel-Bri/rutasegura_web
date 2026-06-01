@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../../acceso-registro/auth.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { OfflineQueueService } from '../../core/services/offline-queue.service';
+import { PushNotificationService } from '../../core/services/push-notification.service';
 import { type AppRole } from '../../core/permissions/permissions.config';
 
 interface NavItem    { label: string; route: string; roles: AppRole[]; }
@@ -125,12 +126,14 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
     readonly router: Router,
     private wsSvc: WebSocketService,
     public offlineSvc: OfflineQueueService,
+    private pushSvc: PushNotificationService,
   ) {}
 
   private wsMsgSub?: Subscription;
 
   ngOnInit(): void {
     this.wsSvc.conectar();
+    this.pushSvc.inicializar();
     this.wsSub = this.wsSvc.on('notificacion').subscribe((payload) => {
       this.mostrarToast(payload.titulo, payload.mensaje);
     });
