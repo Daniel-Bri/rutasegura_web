@@ -82,7 +82,16 @@ export class OfflineQueueService {
         this.queue = this.queue.filter(a => a.id !== action.id);
         this.saveToStorage();
         this.pendientes$.next(this.queue.length);
-      } catch {
+      } catch (err: any) {
+        const status = err?.status ?? 0;
+        if (status >= 400 && status < 500) {
+          // Error del cliente (400, 401, 403, 404, 409…) — la acción es inválida, descartar
+          this.queue = this.queue.filter(a => a.id !== action.id);
+          this.saveToStorage();
+          this.pendientes$.next(this.queue.length);
+          continue; // intentar la siguiente acción
+        }
+        // Error de red o servidor (0, 5xx) — reintentar después
         break;
       }
     }
