@@ -118,6 +118,7 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   pendientesOffline = 0;
   private onlineSub?: Subscription;
   private pendientesSub?: Subscription;
+  private syncSub?: Subscription;
 
   constructor(
     private auth: AuthService,
@@ -141,6 +142,12 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
     });
     this.onlineSub = this.offlineSvc.online$.subscribe(v => this.isOnline = v);
     this.pendientesSub = this.offlineSvc.pendientes$.subscribe(v => this.pendientesOffline = v);
+    this.syncSub = this.offlineSvc.sincronizado$.subscribe(({ sincronizados, labels }) => {
+      const detalle = labels.length === 1
+        ? labels[0]
+        : `${sincronizados} acciones sincronizadas`;
+      this.mostrarToast('✅ Conexión restaurada', detalle);
+    });
   }
 
   ngOnDestroy(): void {
@@ -148,6 +155,7 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
     this.wsMsgSub?.unsubscribe();
     this.onlineSub?.unsubscribe();
     this.pendientesSub?.unsubscribe();
+    this.syncSub?.unsubscribe();
     clearTimeout(this.toastTimer);
   }
 

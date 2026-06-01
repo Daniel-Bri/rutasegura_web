@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface OfflineAction {
@@ -12,6 +12,8 @@ export interface OfflineAction {
   label: string;
 }
 
+export interface SyncResult { sincronizados: number; labels: string[]; }
+
 const STORAGE_KEY = 'rutasegura_offline_queue';
 
 @Injectable({ providedIn: 'root' })
@@ -19,6 +21,7 @@ export class OfflineQueueService {
   private queue: OfflineAction[] = [];
   readonly pendientes$ = new BehaviorSubject<number>(0);
   readonly online$ = new BehaviorSubject<boolean>(navigator.onLine);
+  readonly sincronizado$ = new Subject<SyncResult>();
   private sincronizando = false;
 
   constructor(private http: HttpClient) {
@@ -61,6 +64,9 @@ export class OfflineQueueService {
     this.sincronizando = true;
 
     const pendientes = [...this.queue];
+    const labels: string[] = [];
+    let sincronizados = 0;
+
     for (const action of pendientes) {
       try {
         const url = `${environment.apiUrl}${action.endpoint}`;
@@ -71,6 +77,8 @@ export class OfflineQueueService {
         } else {
           await this.http.put(url, action.body).toPromise();
         }
+        labels.push(action.label);
+        sincronizados++;
         this.queue = this.queue.filter(a => a.id !== action.id);
         this.saveToStorage();
         this.pendientes$.next(this.queue.length);
@@ -80,6 +88,9 @@ export class OfflineQueueService {
     }
 
     this.sincronizando = false;
+    if (sincronizados > 0) {
+      this.sincronizado$.next({ sincronizados, labels });
+    }
   }
 
   getQueue(): OfflineAction[] {
