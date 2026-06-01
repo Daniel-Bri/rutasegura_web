@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TecnicoService, AsignacionResponse } from '../tecnico.service';
+import { OfflineQueueService } from '../../core/services/offline-queue.service';
 
 interface EstadoInfo {
   label: string;
@@ -51,7 +52,11 @@ export class ActualizarEstadoServicioComponent implements OnInit {
   readonly transiciones = TRANSICIONES;
   readonly pasos        = PASOS;
 
-  constructor(private svc: TecnicoService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private svc: TecnicoService,
+    private cdr: ChangeDetectorRef,
+    private offlineQueue: OfflineQueueService,
+  ) {}
 
   ngOnInit(): void { this.cargar(); }
 
@@ -87,11 +92,24 @@ export class ActualizarEstadoServicioComponent implements OnInit {
     this.procesando[a.id] = true;
     delete this.mensajeFila[a.id];
 
+    if (!this.offlineQueue.isOnline) {
+      this.offlineQueue.encolar(
+        `/api/talleres/asignaciones/${a.id}/estado`,
+        'PATCH',
+        { estado: nuevoEstado, observacion: this.obsTexto[a.id] || undefined },
+        `Cambiar estado asignación #${a.id} → ${ESTADO_INFO[nuevoEstado]?.label ?? nuevoEstado}`,
+      );
+      this.mensajeFila[a.id] = { tipo: 'ok', texto: '📶 Sin conexión — se sincronizará cuando vuelva internet' };
+      this.procesando[a.id]  = false;
+      this.cdr.detectChanges();
+      setTimeout(() => { delete this.mensajeFila[a.id]; this.cdr.detectChanges(); }, 4000);
+      return;
+    }
+
     this.svc.actualizarEstado(a.id, nuevoEstado, this.obsTexto[a.id] || undefined).subscribe({
       next: (actualizada) => {
         const idx = this.asignaciones.findIndex((x) => x.id === actualizada.id);
         if (idx !== -1) this.asignaciones[idx] = actualizada;
-        // Si ya no es estado activo, quitar de la lista tras un momento
         const activos = ['aceptado', 'en_camino', 'en_sitio', 'en_reparacion'];
         if (!activos.includes(actualizada.estado)) {
           setTimeout(() => {
