@@ -1,8 +1,10 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { VehiculoService, TallerResponse } from '../vehiculo.service';
 
 type Filtro = 'todos' | 'pendiente' | 'aprobado' | 'rechazado';
+interface TenantOption { id: number; nombre: string; slug: string; activo: boolean; }
 
 const FILTROS: { value: Filtro; label: string }[] = [
   { value: 'pendiente', label: 'Pendientes' },
@@ -14,15 +16,19 @@ const FILTROS: { value: Filtro; label: string }[] = [
 @Component({
   selector: 'app-aprobar-talleres',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './aprobar-talleres.component.html',
 })
 export class AprobarTalleresComponent implements OnInit {
   readonly filtros = FILTROS;
   talleres: TallerResponse[] = [];
+  tenants: TenantOption[] = [];
   filtro: Filtro = 'pendiente';
   loading = false;
   errorMsg = '';
+
+  // Tenant seleccionado por taller (antes de aprobar)
+  tenantSel: Record<number, number | null> = {};
 
   // Para feedback por fila
   procesando: Record<number, 'aprobando' | 'rechazando' | null> = {};
@@ -32,6 +38,10 @@ export class AprobarTalleresComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
+    this.vehiculoService.listarTenants().subscribe({
+      next: (data) => { this.tenants = data.filter(t => t.activo); this.cdr.detectChanges(); },
+      error: () => {},
+    });
   }
 
   cargar(): void {
@@ -64,8 +74,9 @@ export class AprobarTalleresComponent implements OnInit {
   aprobar(taller: TallerResponse): void {
     this.procesando[taller.id] = 'aprobando';
     this.mensajeFila[taller.id] = { tipo: 'ok', texto: '' };
+    const tenantId = this.tenantSel[taller.id] ?? null;
 
-    this.vehiculoService.aprobarTaller(taller.id).subscribe({
+    this.vehiculoService.aprobarTaller(taller.id, tenantId).subscribe({
       next: (actualizado) => {
         this.procesando[taller.id] = null;
         this.mensajeFila[taller.id] = { tipo: 'ok', texto: 'Aprobado correctamente' };

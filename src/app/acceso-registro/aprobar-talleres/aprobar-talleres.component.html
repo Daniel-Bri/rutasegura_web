@@ -50,6 +50,7 @@
             <th>Nombre</th>
             <th>Dirección</th>
             <th>Contacto</th>
+            <th>Tenant</th>
             <th>Estado</th>
             <th>Registrado</th>
             <th>Acciones</th>
@@ -65,6 +66,17 @@
                 @if (taller.telefono) { <div>{{ taller.telefono }}</div> }
                 @if (taller.email_comercial) { <div class="text-muted">{{ taller.email_comercial }}</div> }
               </td>
+              <!-- Tenant actual -->
+              <td>
+                @if (taller.tenant_nombre) {
+                  <span style="font-size:0.82rem;font-weight:600;color:#4F46E5">
+                    <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle">domain</span>
+                    {{ taller.tenant_nombre }}
+                  </span>
+                } @else {
+                  <span class="text-muted" style="font-size:0.8rem">Sin tenant</span>
+                }
+              </td>
               <td>
                 <span class="badge" [ngClass]="badgeClass(taller.estado)">
                   {{ taller.estado }}
@@ -77,31 +89,43 @@
                     {{ msg.texto }}
                   </span>
                 } @else {
-                  <div class="action-btns">
-                    @if (taller.estado !== 'aprobado') {
-                      <button
-                        class="btn-approve"
-                        [disabled]="procesando[taller.id] !== null && procesando[taller.id] !== undefined"
-                        (click)="aprobar(taller)">
-                        @if (procesando[taller.id] === 'aprobando') {
-                          <span class="spinner"></span>
-                        } @else {
-                          Aprobar
+                  <div style="display:flex;flex-direction:column;gap:6px;min-width:160px">
+                    <!-- Selector de tenant (solo al aprobar) -->
+                    @if (taller.estado !== 'aprobado' && tenants.length > 0) {
+                      <select [(ngModel)]="tenantSel[taller.id]"
+                              style="font-size:0.78rem;padding:4px 8px;border:1px solid #D1D5DB;border-radius:6px">
+                        <option [ngValue]="null">— Sin tenant —</option>
+                        @for (t of tenants; track t.id) {
+                          <option [ngValue]="t.id">{{ t.nombre }}</option>
                         }
-                      </button>
+                      </select>
                     }
-                    @if (taller.estado !== 'rechazado') {
-                      <button
-                        class="btn-reject"
-                        [disabled]="procesando[taller.id] !== null && procesando[taller.id] !== undefined"
-                        (click)="rechazar(taller)">
-                        @if (procesando[taller.id] === 'rechazando') {
-                          <span class="spinner"></span>
-                        } @else {
-                          Rechazar
-                        }
-                      </button>
-                    }
+                    <div class="action-btns">
+                      @if (taller.estado !== 'aprobado') {
+                        <button
+                          class="btn-approve"
+                          [disabled]="procesando[taller.id] !== null && procesando[taller.id] !== undefined"
+                          (click)="aprobar(taller)">
+                          @if (procesando[taller.id] === 'aprobando') {
+                            <span class="spinner"></span>
+                          } @else {
+                            Aprobar
+                          }
+                        </button>
+                      }
+                      @if (taller.estado !== 'rechazado') {
+                        <button
+                          class="btn-reject"
+                          [disabled]="procesando[taller.id] !== null && procesando[taller.id] !== undefined"
+                          (click)="rechazar(taller)">
+                          @if (procesando[taller.id] === 'rechazando') {
+                            <span class="spinner"></span>
+                          } @else {
+                            Rechazar
+                          }
+                        </button>
+                      }
+                    </div>
                   </div>
                 }
               </td>

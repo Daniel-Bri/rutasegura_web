@@ -73,7 +73,9 @@ export interface TallerResponse {
   disponible: boolean;
   estado: string;
   rating: number;
-  especialidades?: string | null;  // JSON string
+  especialidades?: string | null;
+  tenant_id?: number | null;
+  tenant_nombre?: string | null;
   created_at: string;
 }
 
@@ -114,12 +116,19 @@ export class VehiculoService {
     return this.http.get<TallerResponse[]>(`${this.API}/talleres${params}`).pipe(timeout(8000));
   }
 
-  aprobarTaller(id: number): Observable<TallerResponse> {
-    return this.http.patch<TallerResponse>(`${this.API}/talleres/${id}/aprobar`, {}).pipe(timeout(8000));
+  aprobarTaller(id: number, tenantId?: number | null): Observable<TallerResponse> {
+    const body = tenantId != null ? { tenant_id: tenantId } : {};
+    return this.http.patch<TallerResponse>(`${this.API}/talleres/${id}/aprobar`, body).pipe(timeout(8000));
   }
 
   rechazarTaller(id: number): Observable<TallerResponse> {
     return this.http.patch<TallerResponse>(`${this.API}/talleres/${id}/rechazar`, {}).pipe(timeout(8000));
+  }
+
+  listarTenants(): Observable<{ id: number; nombre: string; slug: string; activo: boolean }[]> {
+    return this.http.get<{ id: number; nombre: string; slug: string; activo: boolean }[]>(
+      `${this.API}/tenants`
+    ).pipe(timeout(8000));
   }
 
   // ── Mi perfil de taller ──────────────────────────────────
