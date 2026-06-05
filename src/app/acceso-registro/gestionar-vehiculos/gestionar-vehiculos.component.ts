@@ -11,6 +11,7 @@ interface Vehiculo {
   modelo: string;
   anio: number;
   color: string;
+  numero_seguro: string | null;
   activo: boolean;
 }
 
@@ -30,7 +31,7 @@ export class GestionarVehiculosComponent implements OnInit {
   eliminando: number | null = null;
   msg: { tipo: 'ok' | 'error'; texto: string } | null = null;
 
-  form = { placa: '', marca: '', modelo: '', anio: new Date().getFullYear(), color: '' };
+  form = { placa: '', marca: '', modelo: '', anio: new Date().getFullYear(), color: '', numero_seguro: '' };
 
   constructor(private http: HttpClient) {}
 
@@ -51,7 +52,7 @@ export class GestionarVehiculosComponent implements OnInit {
   }
 
   resetForm(): void {
-    this.form = { placa: '', marca: '', modelo: '', anio: new Date().getFullYear(), color: '' };
+    this.form = { placa: '', marca: '', modelo: '', anio: new Date().getFullYear(), color: '', numero_seguro: '' };
   }
 
   registrar(): void {

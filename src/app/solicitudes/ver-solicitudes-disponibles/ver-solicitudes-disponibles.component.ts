@@ -1,13 +1,13 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { SolicitudService, SolicitudDisponible } from '../solicitud.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-ver-solicitudes-disponibles',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   templateUrl: './ver-solicitudes-disponibles.component.html',
   styleUrl: './ver-solicitudes-disponibles.component.css',
 })
@@ -16,116 +16,82 @@ export class VerSolicitudesDisponiblesComponent implements OnInit, OnDestroy {
   loading = false;
   errorMsg = '';
   seleccion: SolicitudDisponible | null = null;
-  etaMinutos: number | null = null;
-  aceptando = false;
-  /** Mensaje global al aceptar solicitud (éxito / error). */
   bannerMsg: { tipo: 'ok' | 'error'; texto: string } | null = null;
   private _poll?: ReturnType<typeof setInterval>;
 
-  constructor(private solicitudSvc: SolicitudService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private solicitudSvc: SolicitudService,
+    private router: Router,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
     this.cargar();
     this._poll = setInterval(() => this.cargar(true), 20000);
   }
 
-  ngOnDestroy(): void {
-    if (this._poll) clearInterval(this._poll);
-  }
+  ngOnDestroy(): void { if (this._poll) clearInterval(this._poll); }
 
   cargar(silencioso = false): void {
-    if (!silencioso) {
-      this.loading = true;
-      this.errorMsg = '';
-      this.cdr.detectChanges();
-    }
+    if (!silencioso) { this.loading = true; this.errorMsg = ''; this.cdr.detectChanges(); }
     this.solicitudSvc.listarDisponibles().subscribe({
       next: (data) => {
         this.items = data;
-        if (this.seleccion) {
-          this.seleccion = data.find((d) => d.incidente_id === this.seleccion!.incidente_id) ?? null;
-        }
+        if (this.seleccion)
+          this.seleccion = data.find(d => d.incidente_id === this.seleccion!.incidente_id) ?? null;
         this.loading = false;
         this.cdr.detectChanges();
       },
       error: (e) => {
         this.loading = false;
-        this.errorMsg =
-          e?.error?.detail ??
-          (typeof e?.message === 'string' ? e.message : 'No se pudieron cargar las solicitudes.');
+        this.errorMsg = e?.error?.detail ?? 'No se pudieron cargar las solicitudes.';
         this.cdr.detectChanges();
       },
     });
+  }
+
+  abrirDetalle(s: SolicitudDisponible): void { this.seleccion = s; }
+  cerrarDetalle(): void { this.seleccion = null; }
+  cerrarBanner(): void { this.bannerMsg = null; }
+
+  /** Para solicitudes "invitado" → navega a generar cotización con el incidente pre-cargado */
+  irACotizar(incidenteId: number): void {
+    this.router.navigate(['/app/cotizacion-pagos/generar-cotizacion'], {
+      queryParams: { incidente_id: incidenteId },
+    });
+  }
+
+  estadoLabel(estado: string): string {
+    const m: Record<string, string> = {
+      invitado:      '📨 Invitado — cotizar',
+      aceptado:      '✅ Cotización aceptada',
+      en_camino:     '🚗 En camino',
+      en_sitio:      '📍 En sitio',
+      en_reparacion: '🔧 En reparación',
+      finalizado:    '✔️ Finalizado',
+      cancelado:     '❌ Cancelado',
+      rechazado:     '🚫 No seleccionado',
+    };
+    return m[estado] ?? estado;
+  }
+
+  estadoClass(estado: string): string {
+    if (estado === 'invitado') return 'badge-warning';
+    if (['aceptado','en_camino','en_sitio','en_reparacion'].includes(estado)) return 'badge-success';
+    if (estado === 'finalizado') return 'badge-muted';
+    return 'badge-danger';
   }
 
   prioridadClass(p: string): string {
-    if (p === 'alta') return 'badge-danger';
-    if (p === 'media') return 'badge-warning';
-    return 'badge-muted';
+    return p === 'alta' ? 'badge-danger' : p === 'media' ? 'badge-warning' : 'badge-muted';
   }
 
   prioridadLabel(p: string): string {
-    const m: Record<string, string> = { alta: 'Alta', media: 'Media', baja: 'Baja' };
-    return m[p] ?? p;
-  }
-
-  abrirDetalle(s: SolicitudDisponible): void {
-    this.seleccion = s;
-  }
-
-  cerrarDetalle(): void {
-    this.seleccion = null;
-    this.etaMinutos = null;
-  }
-
-  cerrarBanner(): void {
-    this.bannerMsg = null;
-  }
-
-  aceptarSeleccion(): void {
-    if (!this.seleccion || this.aceptando) return;
-    this.aceptando = true;
-    this.bannerMsg = null;
-    const eta = this.etaMinutos != null && this.etaMinutos > 0 ? this.etaMinutos : undefined;
-    this.solicitudSvc.aceptar(this.seleccion.incidente_id, eta).subscribe({
-      next: (a) => {
-        this.aceptando = false;
-        this.bannerMsg = {
-          tipo: 'ok',
-          texto: `Solicitud aceptada. Asignación #${a.id}. El incidente pasó a en proceso.`,
-        };
-        this.cargar(true);
-        this.seleccion = null;
-        this.etaMinutos = null;
-        this.cdr.detectChanges();
-      },
-      error: (e) => {
-        this.aceptando = false;
-        const d = e?.error?.detail;
-        this.bannerMsg = {
-          tipo: 'error',
-          texto: typeof d === 'string' ? d : 'No se pudo aceptar la solicitud.',
-        };
-        this.cdr.detectChanges();
-      },
-    });
+    return ({ alta: 'Alta', media: 'Media', baja: 'Baja' } as Record<string,string>)[p] ?? p;
   }
 
   fotoFullUrl(path: string): string {
     if (path.startsWith('http')) return path;
     return `${environment.apiUrl}${path.startsWith('/') ? '' : '/'}${path}`;
-  }
-
-  scoreLabel(score: number): string {
-    if (score >= 0.7) return 'Muy cercano';
-    if (score >= 0.4) return 'Cercano';
-    if (score >  0)   return 'Lejano';
-    return '';
-  }
-
-  scoreClass(score: number): string {
-    if (score >= 0.7) return 'badge-success';
-    if (score >= 0.4) return 'badge-warning';
-    return 'badge-muted';
   }
 }

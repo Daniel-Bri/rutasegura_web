@@ -8,6 +8,7 @@ export interface TecnicoCreate {
   nombre: string;
   especialidad: string;
   telefono?: string;
+  email?: string;
 }
 
 export interface TecnicoUpdate {
@@ -15,10 +16,12 @@ export interface TecnicoUpdate {
   especialidad?: string;
   telefono?: string;
   estado?: string;
+  email?: string;
 }
 
 export interface TecnicoResponse {
   id: number;
+  usuario_id?: number;
   taller_id: number;
   nombre: string;
   especialidad: string;
@@ -133,6 +136,12 @@ export class TecnicoService {
   actualizarEstado(id: number, estado: string, observacion?: string): Observable<AsignacionResponse> {
     return this.http
       .patch<AsignacionResponse>(`${this.API}/asignaciones/${id}/estado`, { estado, observacion })
+      .pipe(timeout(8000));
+  }
+
+  registrarCobroVisita(asignacionId: number, monto: number, concepto: string): Observable<unknown> {
+    return this.http
+      .post(`${this.API}/asignaciones/${asignacionId}/cobro-visita`, { monto, concepto })
       .pipe(timeout(8000));
   }
 

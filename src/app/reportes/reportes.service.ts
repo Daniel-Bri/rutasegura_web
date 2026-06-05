@@ -60,10 +60,47 @@ export class ReportesService {
     return this.http.post(`${this.API}/calificaciones`, payload).pipe(timeout(10000));
   }
 
+  kpis(params: { desde?: string; hasta?: string; tenant_id?: number } = {}): Observable<KpisResponse> {
+    const p: string[] = [];
+    if (params.desde)     p.push(`desde=${encodeURIComponent(params.desde)}`);
+    if (params.hasta)     p.push(`hasta=${encodeURIComponent(params.hasta)}`);
+    if (params.tenant_id) p.push(`tenant_id=${params.tenant_id}`);
+    const q = p.length ? `?${p.join('&')}` : '';
+    return this.http.get<KpisResponse>(`${this.API}/kpis${q}`).pipe(timeout(15000));
+  }
+
   private buildQuery(params: { desde?: string; hasta?: string }): string {
     const p: string[] = [];
     if (params.desde) p.push(`desde=${encodeURIComponent(params.desde)}`);
     if (params.hasta) p.push(`hasta=${encodeURIComponent(params.hasta)}`);
     return p.length ? `?${p.join('&')}` : '';
   }
+}
+
+export interface TallerEficiente {
+  taller_id: number;
+  nombre: string;
+  tiempo_promedio_min: number;
+  total_servicios: number;
+}
+
+export interface ZonaCaliente {
+  lat: number;
+  lon: number;
+  total: number;
+}
+
+export interface KpisResponse {
+  tiempo_promedio_asignacion_min: number;
+  tiempo_promedio_servicio_min:   number;
+  total_incidentes:               number;
+  total_servicios_completados:    number;
+  casos_cancelados_asignacion:    number;
+  casos_cancelados_incidente:     number;
+  sla_compliance_pct:             number;
+  sla_minutos:                    number;
+  dentro_sla:                     number;
+  incidentes_por_tipo:            Record<string, number>;
+  talleres_eficientes:            TallerEficiente[];
+  zonas_calientes:                ZonaCaliente[];
 }

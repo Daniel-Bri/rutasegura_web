@@ -10,6 +10,7 @@ export interface VehiculoPayload {
   modelo: string;
   anio: number;
   color: string;
+  numero_seguro?: string;
 }
 
 export interface VehiculoResponse {
@@ -20,6 +21,7 @@ export interface VehiculoResponse {
   modelo: string;
   anio: number;
   color: string;
+  numero_seguro?: string;
   activo: boolean;
   created_at: string;
 }
@@ -71,7 +73,18 @@ export interface TallerResponse {
   disponible: boolean;
   estado: string;
   rating: number;
+  especialidades?: string | null;  // JSON string
   created_at: string;
+}
+
+export interface TallerUpdatePayload {
+  nombre?:          string;
+  direccion?:       string;
+  telefono?:        string;
+  email_comercial?: string;
+  latitud?:         number;
+  longitud?:        number;
+  especialidades?:  string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -107,6 +120,15 @@ export class VehiculoService {
 
   rechazarTaller(id: number): Observable<TallerResponse> {
     return this.http.patch<TallerResponse>(`${this.API}/talleres/${id}/rechazar`, {}).pipe(timeout(8000));
+  }
+
+  // ── Mi perfil de taller ──────────────────────────────────
+  miTaller(): Observable<TallerResponse> {
+    return this.http.get<TallerResponse>(`${this.API}/mi-taller`).pipe(timeout(8000));
+  }
+
+  actualizarMiTaller(data: TallerUpdatePayload): Observable<TallerResponse> {
+    return this.http.patch<TallerResponse>(`${this.API}/mi-taller`, data).pipe(timeout(8000));
   }
 
   // ── CU27 - Gestionar usuarios ──────────────────────────────

@@ -66,6 +66,18 @@
       }
     </div>
 
+    <div class="field">
+      <label for="numero_seguro">
+        <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;color:#6B7280">shield</span>
+        Número de póliza / seguro <span style="color:#9CA3AF;font-weight:400">(opcional)</span>
+      </label>
+      <input id="numero_seguro" type="text" formControlName="numero_seguro"
+             placeholder="Ej. POL-2024-00123" />
+      <small style="color:#6B7280;font-size:0.78rem">
+        Si el vehículo tiene seguro, la aseguradora puede cubrir el servicio y el técnico cobra solo por la visita.
+      </small>
+    </div>
+
     @if (serverError) {
       <span class="server-error">{{ serverError }}</span>
     }

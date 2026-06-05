@@ -25,18 +25,15 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   private wsSub?: Subscription;
   private toastTimer: any;
 
-  // Todos los módulos siempre visibles — el guard + lógica de bloqueo maneja acceso
   readonly ALL_NAV_SECTIONS: NavSection[] = [
     {
-      id: 'acceso',
-      label: 'Acceso y Registro',
-      icon: 'manage_accounts',
+      id: 'perfil',
+      label: 'Mi Perfil',
+      icon: 'person',
       items: [
-        { label: 'Mis Vehículos',      route: '/app/acceso-registro/gestionar-vehiculos',  roles: ['cliente'] },
-        { label: 'Registrar Taller',   route: '/app/acceso-registro/registrar-taller',     roles: ['taller'] },
-        { label: 'Gestionar Usuarios', route: '/app/acceso-registro/gestionar-usuarios',   roles: ['admin'] },
-        { label: 'Gestionar Tenants',  route: '/app/acceso-registro/gestionar-tenants',   roles: ['admin'] },
-        { label: 'Aprobar Talleres',   route: '/app/acceso-registro/aprobar-talleres',     roles: ['admin'] },
+        { label: 'Mis Vehículos',      route: '/app/acceso-registro/gestionar-vehiculos', roles: ['cliente'] },
+        { label: 'Mi Taller',           route: '/app/acceso-registro/mi-taller',           roles: ['taller'] },
+        { label: 'Registrar Taller',   route: '/app/acceso-registro/registrar-taller',    roles: ['taller'] },
       ],
     },
     {
@@ -44,12 +41,12 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
       label: 'Emergencias',
       icon: 'emergency',
       items: [
-        { label: 'Reportar Emergencia',  route: '/app/emergencias/reportar-emergencia', roles: ['cliente'] },
-        { label: 'Botón SOS',            route: '/app/emergencias/boton-sos',           roles: ['cliente'] },
-        { label: 'Enviar Ubicación GPS', route: '/app/emergencias/enviar-ubicacion',    roles: ['cliente'] },
-        { label: 'Agregar Descripción',  route: '/app/emergencias/agregar-descripcion', roles: ['cliente'] },
-        { label: 'Adjuntar Fotos',       route: '/app/emergencias/adjuntar-fotos',      roles: ['cliente'] },
-        { label: 'Enviar Audio',         route: '/app/emergencias/enviar-audio',        roles: ['cliente'] },
+        { label: 'Reportar Emergencia', route: '/app/emergencias/reportar-emergencia', roles: ['cliente'] },
+        { label: 'Botón SOS',           route: '/app/emergencias/boton-sos',           roles: ['cliente'] },
+        { label: 'Enviar Ubicación',    route: '/app/emergencias/enviar-ubicacion',    roles: ['cliente'] },
+        { label: 'Agregar Descripción', route: '/app/emergencias/agregar-descripcion', roles: ['cliente'] },
+        { label: 'Adjuntar Fotos',      route: '/app/emergencias/adjuntar-fotos',      roles: ['cliente'] },
+        { label: 'Enviar Audio',        route: '/app/emergencias/enviar-audio',        roles: ['cliente'] },
       ],
     },
     {
@@ -57,24 +54,22 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
       label: 'Solicitudes',
       icon: 'assignment',
       items: [
-        { label: 'Ver Disponibles',    route: '/app/solicitudes/ver-solicitudes-disponibles', roles: ['taller'] },
-        { label: 'Aceptar Solicitud', route: '/app/solicitudes/aceptar-solicitud',          roles: ['taller'] },
-        { label: 'Rechazar Solicitud',route: '/app/solicitudes/rechazar-solicitud',         roles: ['taller'] },
-        { label: 'Ver Estado',        route: '/app/solicitudes/ver-estado-solicitud',       roles: ['cliente'] },
-        { label: 'Cancelar Solicitud',route: '/app/solicitudes/cancelar-solicitud',         roles: ['cliente'] },
-        { label: 'Verificar Llegada', route: '/app/solicitudes/verificar-llegada',          roles: ['cliente'] },
-        { label: 'Detalle Incidente', route: '/app/solicitudes/ver-detalle-incidente',      roles: ['taller'] },
+        { label: 'Ver Estado',         route: '/app/solicitudes/ver-estado-solicitud',       roles: ['cliente'] },
+        { label: 'Cancelar',           route: '/app/solicitudes/cancelar-solicitud',         roles: ['cliente'] },
+        { label: 'Verificar Llegada',  route: '/app/solicitudes/verificar-llegada',          roles: ['cliente'] },
+        { label: 'Disponibles',        route: '/app/solicitudes/ver-solicitudes-disponibles', roles: ['taller'] },
+        { label: 'Detalle Incidente',  route: '/app/solicitudes/ver-detalle-incidente',      roles: ['taller'] },
       ],
     },
     {
-      id: 'talleres',
-      label: 'Talleres y Técnicos',
+      id: 'servicios',
+      label: 'Servicios',
       icon: 'handyman',
       items: [
-        { label: 'Gestionar Técnicos',       route: '/app/talleres-tecnicos/gestionar-tecnicos',           roles: ['taller'] },
-        { label: 'Gestionar Disponibilidad', route: '/app/talleres-tecnicos/gestionar-disponibilidad',     roles: ['taller'] },
-        { label: 'Actualizar Estado',        route: '/app/talleres-tecnicos/actualizar-estado-servicio',   roles: ['taller', 'tecnico'] },
-        { label: 'Registrar Servicio',       route: '/app/talleres-tecnicos/registrar-servicio-realizado', roles: ['taller', 'tecnico'] },
+        { label: 'Gestionar Técnicos',  route: '/app/talleres-tecnicos/gestionar-tecnicos',           roles: ['taller'] },
+        { label: 'Disponibilidad',      route: '/app/talleres-tecnicos/gestionar-disponibilidad',     roles: ['taller'] },
+        { label: 'Estado del Servicio', route: '/app/talleres-tecnicos/actualizar-estado-servicio',   roles: ['taller', 'tecnico'] },
+        { label: 'Registrar Servicio',  route: '/app/talleres-tecnicos/registrar-servicio-realizado', roles: ['taller', 'tecnico'] },
       ],
     },
     {
@@ -82,11 +77,12 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
       label: 'Cotización y Pagos',
       icon: 'receipt_long',
       items: [
-        { label: 'Generar Cotización',   route: '/app/cotizacion-pagos/generar-cotizacion',   roles: ['taller'] },
-        { label: 'Ver Cotizaciones',     route: '/app/cotizacion-pagos/ver-cotizacion',       roles: ['taller', 'cliente'] },
-        { label: 'Confirmar Cotización', route: '/app/cotizacion-pagos/confirmar-cotizacion', roles: ['taller'] },
-        { label: 'Realizar Pago',        route: '/app/cotizacion-pagos/realizar-pago',        roles: ['cliente'] },
-        { label: 'Ver Comisiones',       route: '/app/cotizacion-pagos/ver-comisiones',       roles: ['taller', 'admin'] },
+        { label: 'Mis Cotizaciones',    route: '/app/cotizacion-pagos/ver-cotizacion',       roles: ['cliente'] },
+        { label: 'Realizar Pago',       route: '/app/cotizacion-pagos/realizar-pago',        roles: ['cliente'] },
+        { label: 'Generar Cotización',  route: '/app/cotizacion-pagos/generar-cotizacion',   roles: ['taller'] },
+        { label: 'Ver Cotizaciones',    route: '/app/cotizacion-pagos/ver-cotizacion',       roles: ['taller'] },
+        { label: 'Confirmar Cotización',route: '/app/cotizacion-pagos/confirmar-cotizacion', roles: ['taller'] },
+        { label: 'Comisiones',          route: '/app/cotizacion-pagos/ver-comisiones',       roles: ['taller', 'admin'] },
       ],
     },
     {
@@ -94,9 +90,9 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
       label: 'Comunicación',
       icon: 'forum',
       items: [
-        { label: 'Chat',             route: '/app/comunicacion/chat',             roles: ['cliente', 'taller', 'tecnico'] },
-        { label: 'Notificaciones',   route: '/app/comunicacion/notificaciones',   roles: ['cliente', 'taller'] },
-        { label: 'Técnico en Mapa',  route: '/app/comunicacion/ver-tecnico-mapa', roles: ['cliente'] },
+        { label: 'Chat',            route: '/app/comunicacion/chat',             roles: ['cliente', 'taller', 'tecnico'] },
+        { label: 'Notificaciones',  route: '/app/comunicacion/notificaciones',   roles: ['cliente', 'taller'] },
+        { label: 'Técnico en Mapa', route: '/app/comunicacion/ver-tecnico-mapa', roles: ['cliente'] },
       ],
     },
     {
@@ -104,13 +100,24 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
       label: 'Reportes',
       icon: 'analytics',
       items: [
-        { label: 'Historial Servicios', route: '/app/reportes/historial-servicios', roles: ['cliente', 'taller'] },
-        { label: 'Calificar Servicio',  route: '/app/reportes/calificar-servicio',  roles: ['cliente'] },
-        { label: 'Recordatorios',       route: '/app/reportes/recordatorios',       roles: ['cliente'] },
-        { label: 'Métricas Taller',     route: '/app/reportes/metricas-taller',     roles: ['taller'] },
-        { label: 'Reporte del Taller',  route: '/app/reportes/reporte-taller',      roles: ['taller'] },
-        { label: 'Métricas Globales',   route: '/app/reportes/metricas-globales',   roles: ['admin'] },
-        { label: 'Auditoría',           route: '/app/reportes/auditoria',           roles: ['admin'] },
+        { label: 'Historial',        route: '/app/reportes/historial-servicios', roles: ['cliente', 'taller'] },
+        { label: 'Calificar',        route: '/app/reportes/calificar-servicio',  roles: ['cliente'] },
+        { label: 'Recordatorios',    route: '/app/reportes/recordatorios',       roles: ['cliente'] },
+        { label: 'Métricas Taller',  route: '/app/reportes/metricas-taller',     roles: ['taller'] },
+        { label: 'Reporte Taller',   route: '/app/reportes/reporte-taller',      roles: ['taller'] },
+        { label: 'KPIs Dashboard',   route: '/app/reportes/kpis-dashboard',      roles: ['admin', 'taller'] },
+        { label: 'Métricas Globales',route: '/app/reportes/metricas-globales',   roles: ['admin'] },
+        { label: 'Auditoría',        route: '/app/reportes/auditoria',           roles: ['admin'] },
+      ],
+    },
+    {
+      id: 'admin',
+      label: 'Administración',
+      icon: 'admin_panel_settings',
+      items: [
+        { label: 'Gestionar Usuarios', route: '/app/acceso-registro/gestionar-usuarios', roles: ['admin'] },
+        { label: 'Gestionar Tenants',  route: '/app/acceso-registro/gestionar-tenants',  roles: ['admin'] },
+        { label: 'Aprobar Talleres',   route: '/app/acceso-registro/aprobar-talleres',   roles: ['admin'] },
       ],
     },
   ];
@@ -185,21 +192,11 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
     return map[this.userRole] ?? 'Usuario';
   }
 
-  // Todos los módulos siempre visibles
-  get navSections(): NavSection[] { return this.ALL_NAV_SECTIONS; }
-
-  /** ¿El usuario tiene acceso a al menos un item de la sección? */
-  sectionAccessible(section: NavSection): boolean {
-    return section.items.some(i => i.roles.includes(this.userRole));
-  }
-
-  /** ¿El usuario puede acceder a este item? */
-  itemAccessible(item: NavItem): boolean {
-    return item.roles.includes(this.userRole);
-  }
-
-  navigateLocked(): void {
-    this.router.navigate(['/app/acceso-denegado']);
+  /** Solo secciones e ítems accesibles para el rol actual */
+  get navSections(): NavSection[] {
+    return this.ALL_NAV_SECTIONS
+      .map(s => ({ ...s, items: s.items.filter(i => i.roles.includes(this.userRole)) }))
+      .filter(s => s.items.length > 0);
   }
 
   toggle()               { this.collapsed.update(v => !v); }

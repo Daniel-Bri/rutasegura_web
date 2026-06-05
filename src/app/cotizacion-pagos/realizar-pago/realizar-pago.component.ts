@@ -26,6 +26,9 @@ export class RealizarPagoComponent implements OnInit {
   errorMsg  = '';
   pago: PagoResponse | null = null;
 
+  tarjeta = { numero: '', expiry: '', cvv: '', nombre: '' };
+  tarjetaError = '';
+
   constructor(
     private svc: CotizacionService,
     private route: ActivatedRoute,
@@ -96,6 +99,13 @@ export class RealizarPagoComponent implements OnInit {
 
   pagar(): void {
     if (!this.cotizacionSeleccionada) return;
+    this.tarjetaError = '';
+    if (this.metodo === 'tarjeta') {
+      if (this.tarjeta.numero.replace(/\s/g, '').length < 16) { this.tarjetaError = 'Número de tarjeta inválido.'; return; }
+      if (!this.tarjeta.expiry.match(/^\d{2}\/\d{2}$/)) { this.tarjetaError = 'Fecha de expiración inválida (MM/AA).'; return; }
+      if (this.tarjeta.cvv.length < 3) { this.tarjetaError = 'CVV inválido.'; return; }
+      if (!this.tarjeta.nombre.trim()) { this.tarjetaError = 'Ingresa el nombre del titular.'; return; }
+    }
     this.procesando = true;
     this.errorMsg   = '';
     this.svc.realizarPago({ cotizacion_id: this.cotizacionSeleccionada.id, metodo: this.metodo }).subscribe({
@@ -112,10 +122,24 @@ export class RealizarPagoComponent implements OnInit {
     });
   }
 
+  formatTarjeta(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    let val = input.value.replace(/\D/g, '').slice(0, 16);
+    this.tarjeta.numero = val.replace(/(.{4})/g, '$1 ').trim();
+  }
+
+  formatExpiry(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    let val = input.value.replace(/\D/g, '').slice(0, 4);
+    if (val.length >= 3) val = val.slice(0,2) + '/' + val.slice(2);
+    this.tarjeta.expiry = val;
+  }
+
   metodoLabel(m: string): string {
     const map: Record<string, string> = {
-      efectivo:      'Efectivo',
-      qr:            'QR',
+      efectivo: 'Efectivo',
+      qr:       'QR',
+      tarjeta:  'Tarjeta',
     };
     return map[m] ?? m;
   }

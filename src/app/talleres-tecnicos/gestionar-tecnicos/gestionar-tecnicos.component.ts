@@ -35,7 +35,7 @@ export class GestionarTecnicosComponent implements OnInit {
   panelMode: PanelMode = null;
   editandoId: number | null = null;
 
-  form = { nombre: '', especialidad: '', telefono: '' };
+  form = { nombre: '', especialidad: '', telefono: '', email: '' };
   guardando = false;
   formError = '';
   formSuccess = '';
@@ -91,7 +91,7 @@ export class GestionarTecnicosComponent implements OnInit {
 
   // ── Panel form ─────────────────────────────────────────
   abrirRegistrar(): void {
-    this.form        = { nombre: '', especialidad: '', telefono: '' };
+    this.form        = { nombre: '', especialidad: '', telefono: '', email: '' };
     this.formError   = '';
     this.formSuccess = '';
     this.editandoId  = null;
@@ -99,7 +99,7 @@ export class GestionarTecnicosComponent implements OnInit {
   }
 
   abrirEditar(t: TecnicoResponse): void {
-    this.form        = { nombre: t.nombre, especialidad: t.especialidad, telefono: t.telefono ?? '' };
+    this.form        = { nombre: t.nombre, especialidad: t.especialidad, telefono: t.telefono ?? '', email: '' };
     this.formError   = '';
     this.formSuccess = '';
     this.editandoId  = t.id;
@@ -124,6 +124,7 @@ export class GestionarTecnicosComponent implements OnInit {
       nombre:       this.form.nombre.trim(),
       especialidad: this.form.especialidad.trim(),
       telefono:     this.form.telefono.trim() || undefined,
+      email:        this.form.email.trim() || undefined,
     };
 
     if (this.panelMode === 'registrar') {
@@ -211,6 +212,7 @@ export class GestionarTecnicosComponent implements OnInit {
       next: () => {
         this.asignaciones = this.asignaciones.filter((a) => a.id !== asig.id);
         this.cache.invalidate('asignaciones-pendientes');
+        this.cache.invalidate('asignaciones-activas');
         this.cargarTecnicos(true);
         this.asignandoId = null;
         this.cdr.detectChanges();

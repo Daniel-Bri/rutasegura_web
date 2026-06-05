@@ -64,6 +64,28 @@
         </div>
       </div>
 
+      <!-- Especialidades -->
+      <div class="field">
+        <label>Especialidades del taller *</label>
+        <p style="font-size:0.82rem;color:#6B7280;margin:0 0 10px">
+          Selecciona todas las especialidades que ofrece tu taller. El sistema te asignará solicitudes compatibles.
+        </p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">
+          @for (esp of especialidades; track esp.value) {
+            <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px;cursor:pointer;transition:all 0.15s"
+              [style.background]="especialidadesSeleccionadas.has(esp.value) ? '#EFF6FF' : 'white'"
+              [style.border-color]="especialidadesSeleccionadas.has(esp.value) ? '#2563EB' : '#E5E7EB'">
+              <input type="checkbox" [checked]="especialidadesSeleccionadas.has(esp.value)"
+                (change)="toggleEspecialidad(esp.value)" style="width:16px;height:16px;accent-color:#2563EB" />
+              <span style="font-size:0.88rem;font-weight:500"
+                [style.color]="especialidadesSeleccionadas.has(esp.value) ? '#1D4ED8' : '#374151'">
+                {{ esp.label }}
+              </span>
+            </label>
+          }
+        </div>
+      </div>
+
       <div class="info-note">
         ◎ Tu solicitud quedará en estado <strong>Pendiente</strong> hasta que el
         administrador la revise y apruebe.

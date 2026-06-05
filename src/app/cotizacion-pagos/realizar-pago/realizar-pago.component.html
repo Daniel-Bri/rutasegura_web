@@ -93,7 +93,7 @@
   <div class="form-card">
     <h2 style="margin:0 0 1rem;font-size:1rem;font-weight:700">Método de pago</h2>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:1.5rem">
-      @for (opt of [['efectivo','Efectivo (simulado)','payments'],['qr','QR (simulado)','qr_code_2']]; track opt[0]) {
+      @for (opt of [['efectivo','Efectivo (simulado)','payments'],['qr','QR (simulado)','qr_code_2'],['tarjeta','Tarjeta de crédito/débito','credit_card']]; track opt[0]) {
         <label style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:2px solid;border-radius:10px;cursor:pointer"
                [style.border-color]="metodo === opt[0] ? '#6366F1' : '#E5E7EB'"
                [style.background]="metodo === opt[0] ? '#EEF2FF' : '#FAFAFA'">
@@ -105,6 +105,47 @@
         </label>
       }
     </div>
+
+    <!-- ── Formulario de tarjeta ──────────────────────────── -->
+    @if (metodo === 'tarjeta') {
+      <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;display:flex;flex-direction:column;gap:14px">
+        <h3 style="margin:0;font-size:0.9rem;font-weight:700;color:#374151;display:flex;align-items:center;gap:6px">
+          <span class="material-symbols-outlined" style="font-size:18px;color:#6366F1">credit_card</span>
+          Datos de la tarjeta (simulado)
+        </h3>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="font-size:0.8rem;font-weight:600;color:#6B7280">Número de tarjeta</label>
+          <input type="text" placeholder="1234 5678 9012 3456" maxlength="19"
+                 [value]="tarjeta.numero"
+                 (input)="formatTarjeta($event)"
+                 style="padding:10px 14px;border:1.5px solid #D1D5DB;border-radius:8px;font-size:1rem;letter-spacing:0.05em;width:100%;box-sizing:border-box">
+        </div>
+        <div style="display:flex;gap:12px">
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+            <label style="font-size:0.8rem;font-weight:600;color:#6B7280">Vencimiento (MM/AA)</label>
+            <input type="text" placeholder="MM/AA" maxlength="5"
+                   [value]="tarjeta.expiry"
+                   (input)="formatExpiry($event)"
+                   style="padding:10px 14px;border:1.5px solid #D1D5DB;border-radius:8px;font-size:1rem;width:100%;box-sizing:border-box">
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+            <label style="font-size:0.8rem;font-weight:600;color:#6B7280">CVV</label>
+            <input type="password" placeholder="123" maxlength="4"
+                   [(ngModel)]="tarjeta.cvv"
+                   style="padding:10px 14px;border:1.5px solid #D1D5DB;border-radius:8px;font-size:1rem;width:100%;box-sizing:border-box">
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="font-size:0.8rem;font-weight:600;color:#6B7280">Nombre del titular</label>
+          <input type="text" placeholder="NOMBRE APELLIDO"
+                 [(ngModel)]="tarjeta.nombre"
+                 style="padding:10px 14px;border:1.5px solid #D1D5DB;border-radius:8px;font-size:1rem;text-transform:uppercase;width:100%;box-sizing:border-box">
+        </div>
+        @if (tarjetaError) {
+          <div class="alert-danger" style="margin:0">{{ tarjetaError }}</div>
+        }
+      </div>
+    }
 
     @if (errorMsg) {
       <div class="alert-danger" style="margin-bottom:1rem">{{ errorMsg }}</div>

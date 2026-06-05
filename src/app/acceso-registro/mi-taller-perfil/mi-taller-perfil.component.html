@@ -1,0 +1,176 @@
+<div style="max-width:760px">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Mi Taller</h1>
+      <p class="page-sub">Gestiona la información y especialidades de tu taller</p>
+    </div>
+    @if (!editando && taller) {
+      <button class="btn-primary" (click)="iniciarEdicion()">
+        <span class="material-symbols-outlined" style="font-size:16px;margin-right:6px">edit</span>
+        Editar datos
+      </button>
+    }
+  </div>
+
+  @if (successMsg) {
+    <div class="alert-success" style="margin-bottom:16px">✓ {{ successMsg }}</div>
+  }
+  @if (errorMsg && !cargando) {
+    <div class="alert-danger" style="margin-bottom:16px">{{ errorMsg }}</div>
+  }
+
+  @if (cargando) {
+    <div class="loading-row"><span class="spinner-dark"></span> Cargando...</div>
+  }
+
+  <!-- ── Vista de solo lectura ──────────────────────────────── -->
+  @if (taller && !cargando && !editando) {
+    <div class="form-card">
+
+      <!-- Estado del taller -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #F3F4F6">
+        <div style="width:44px;height:44px;border-radius:10px;background:#EFF6FF;display:flex;align-items:center;justify-content:center">
+          <span class="material-symbols-outlined" style="color:#1D4ED8;font-size:22px">store</span>
+        </div>
+        <div>
+          <p style="margin:0;font-size:18px;font-weight:800;color:#111827">{{ taller.nombre }}</p>
+          <span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;background-color:rgba(0,0,0,0.06)"
+            [style.color]="estadoColor">
+            {{ estadoLabel }}
+          </span>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <p style="margin:0;font-size:13px;color:#6B7280">Calificación</p>
+          <p style="margin:0;font-size:20px;font-weight:800;color:#D97706">
+            ★ {{ taller.rating | number:'1.1-1' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Info general -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div>
+          <p style="margin:0 0 3px;font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px">Dirección</p>
+          <p style="margin:0;font-size:14px;color:#374151">{{ taller.direccion }}</p>
+        </div>
+        <div>
+          <p style="margin:0 0 3px;font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px">Teléfono</p>
+          <p style="margin:0;font-size:14px;color:#374151">{{ taller.telefono || '—' }}</p>
+        </div>
+        <div>
+          <p style="margin:0 0 3px;font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px">Correo comercial</p>
+          <p style="margin:0;font-size:14px;color:#374151">{{ taller.email_comercial || '—' }}</p>
+        </div>
+        <div>
+          <p style="margin:0 0 3px;font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px">Ubicación GPS</p>
+          @if (taller.latitud && taller.longitud) {
+            <p style="margin:0;font-size:13px;color:#374151;font-family:monospace">
+              {{ taller.latitud | number:'1.4-4' }}, {{ taller.longitud | number:'1.4-4' }}
+            </p>
+          } @else {
+            <p style="margin:0;font-size:13px;color:#EF4444">Sin coordenadas — el sistema no podrá asignarte solicitudes por distancia</p>
+          }
+        </div>
+      </div>
+
+      <!-- Especialidades -->
+      <div>
+        <p style="margin:0 0 10px;font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px">Especialidades</p>
+        @if (especialidadesArray.length > 0) {
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            @for (esp of especialidadesArray; track esp) {
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:#EFF6FF;border-radius:20px;border:1px solid #BFDBFE">
+                <span class="material-symbols-outlined" style="font-size:15px;color:#1D4ED8">{{ iconEspecialidad(esp) }}</span>
+                <span style="font-size:13px;font-weight:600;color:#1D4ED8">{{ labelEspecialidad(esp) }}</span>
+              </span>
+            }
+          </div>
+        } @else {
+          <p style="color:#EF4444;font-size:13px">
+            ⚠️ Sin especialidades registradas — el sistema no te asignará solicitudes automáticamente.
+            <a href="#" (click)="$event.preventDefault(); iniciarEdicion()" style="color:#1D4ED8;font-weight:600">Agregar ahora</a>
+          </p>
+        }
+      </div>
+
+    </div>
+  }
+
+  <!-- ── Formulario de edición ──────────────────────────────── -->
+  @if (editando) {
+    <div class="form-card">
+      <h2 style="font-size:16px;font-weight:700;margin:0 0 20px;color:#111827">Editar información del taller</h2>
+
+      <div class="field">
+        <label>Nombre del taller</label>
+        <input type="text" [(ngModel)]="form.nombre" class="form-control" placeholder="Nombre del taller" />
+      </div>
+
+      <div class="field">
+        <label>Dirección</label>
+        <input type="text" [(ngModel)]="form.direccion" class="form-control" placeholder="Dirección completa" />
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="field">
+          <label>Teléfono</label>
+          <input type="tel" [(ngModel)]="form.telefono" class="form-control" placeholder="+591 7XXXXXXX" />
+        </div>
+        <div class="field">
+          <label>Correo comercial</label>
+          <input type="email" [(ngModel)]="form.email_comercial" class="form-control" placeholder="taller@correo.com" />
+        </div>
+        <div class="field">
+          <label>Latitud <span style="color:#9CA3AF;font-size:0.8rem">(GPS)</span></label>
+          <input type="number" [(ngModel)]="form.latitud" class="form-control" placeholder="-17.783333" step="any" />
+        </div>
+        <div class="field">
+          <label>Longitud <span style="color:#9CA3AF;font-size:0.8rem">(GPS)</span></label>
+          <input type="number" [(ngModel)]="form.longitud" class="form-control" placeholder="-63.182140" step="any" />
+        </div>
+      </div>
+
+      <!-- Especialidades -->
+      <div class="field">
+        <label>Especialidades *</label>
+        <p style="font-size:0.82rem;color:#6B7280;margin:0 0 10px">
+          El sistema te asignará solicitudes compatibles con tus especialidades.
+        </p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">
+          @for (esp of especialidadesOpciones; track esp.value) {
+            <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px;cursor:pointer;transition:all 0.15s"
+              [style.background]="especialidadesSeleccionadas.has(esp.value) ? '#EFF6FF' : 'white'"
+              [style.border-color]="especialidadesSeleccionadas.has(esp.value) ? '#2563EB' : '#E5E7EB'">
+              <input type="checkbox" [checked]="especialidadesSeleccionadas.has(esp.value)"
+                (change)="toggleEspecialidad(esp.value)" style="width:16px;height:16px;accent-color:#2563EB" />
+              <span class="material-symbols-outlined" style="font-size:16px"
+                [style.color]="especialidadesSeleccionadas.has(esp.value) ? '#1D4ED8' : '#6B7280'">
+                {{ esp.icon }}
+              </span>
+              <span style="font-size:0.87rem;font-weight:500"
+                [style.color]="especialidadesSeleccionadas.has(esp.value) ? '#1D4ED8' : '#374151'">
+                {{ esp.label }}
+              </span>
+            </label>
+          }
+        </div>
+      </div>
+
+      @if (errorMsg) {
+        <div class="alert-danger">{{ errorMsg }}</div>
+      }
+
+      <div class="form-actions">
+        <button class="btn-secondary" type="button" (click)="cancelarEdicion()" [disabled]="guardando">
+          Cancelar
+        </button>
+        <button class="btn-primary" type="button" (click)="guardar()" [disabled]="guardando">
+          @if (guardando) { <span class="spinner"></span> } @else { Guardar cambios }
+        </button>
+      </div>
+
+    </div>
+  }
+
+</div>

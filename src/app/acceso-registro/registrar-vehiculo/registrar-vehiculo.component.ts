@@ -34,11 +34,12 @@ export class RegistrarVehiculoComponent {
     private router: Router,
   ) {
     this.form = this.fb.group({
-      placa:  ['', [Validators.required, Validators.minLength(5), Validators.maxLength(8)]],
-      marca:  ['', Validators.required],
-      modelo: ['', Validators.required],
-      anio:   ['', [Validators.required, Validators.min(1900), Validators.max(new Date().getFullYear() + 1)]],
-      color:  ['', Validators.required],
+      placa:         ['', [Validators.required, Validators.minLength(5), Validators.maxLength(8)]],
+      marca:         ['', Validators.required],
+      modelo:        ['', Validators.required],
+      anio:          ['', [Validators.required, Validators.min(1900), Validators.max(new Date().getFullYear() + 1)]],
+      color:         ['', Validators.required],
+      numero_seguro: [''],
     });
   }
 

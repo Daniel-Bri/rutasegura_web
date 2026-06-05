@@ -49,6 +49,14 @@ export class ActualizarEstadoServicioComponent implements OnInit {
   procesando: Record<number, boolean>                            = {};
   mensajeFila: Record<number, { tipo: 'ok'|'error'; texto: string }> = {};
 
+  // Cobro por visita
+  cobroVisitaId:  number | null = null;
+  cobroMonto:     number | null = null;
+  cobroConcepto:  string        = 'Cobro por desplazamiento al sitio';
+  cobrandoVisita  = false;
+  cobroError      = '';
+  cobroExito      = false;
+
   readonly estadoInfo   = ESTADO_INFO;
   readonly transiciones = TRANSICIONES;
   readonly pasos        = PASOS;
@@ -138,4 +146,45 @@ export class ActualizarEstadoServicioComponent implements OnInit {
   }
 
   pasoIndex(estado: string): number { return PASOS.indexOf(estado); }
+
+  abrirCobroVisita(asignacionId: number): void {
+    this.cobroVisitaId = asignacionId;
+    this.cobroMonto    = null;
+    this.cobroConcepto = 'Cobro por desplazamiento al sitio';
+    this.cobroError    = '';
+    this.cobroExito    = false;
+    this.cdr.detectChanges();
+  }
+
+  cerrarCobroVisita(): void {
+    this.cobroVisitaId = null;
+    this.cdr.detectChanges();
+  }
+
+  registrarCobroVisita(): void {
+    if (!this.cobroVisitaId || !this.cobroMonto || this.cobroMonto <= 0) {
+      this.cobroError = 'Ingresa un monto válido mayor a 0';
+      this.cdr.detectChanges();
+      return;
+    }
+    this.cobrandoVisita = true;
+    this.cobroError     = '';
+    this.svc.registrarCobroVisita(
+      this.cobroVisitaId,
+      this.cobroMonto,
+      this.cobroConcepto || 'Cobro por desplazamiento al sitio',
+    ).subscribe({
+      next: () => {
+        this.cobroExito    = true;
+        this.cobrandoVisita = false;
+        this.cdr.detectChanges();
+        setTimeout(() => this.cerrarCobroVisita(), 1800);
+      },
+      error: (err) => {
+        this.cobroError    = err.error?.detail ?? 'Error al registrar cobro';
+        this.cobrandoVisita = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
 }

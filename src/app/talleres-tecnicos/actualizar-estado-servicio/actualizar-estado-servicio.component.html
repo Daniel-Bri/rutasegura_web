@@ -113,7 +113,72 @@
           </div>
         }
 
+        <!-- Cobro por visita: visible cuando el técnico está en_sitio -->
+        @if (a.estado === 'en_sitio') {
+          <div style="margin-top:0.75rem;padding:0.85rem;background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px">
+            <p style="margin:0 0 0.5rem;font-size:0.8rem;font-weight:700;color:#92400E">
+              <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:4px">shield</span>
+              ¿El seguro cubre el servicio?
+            </p>
+            <p style="margin:0 0 0.75rem;font-size:0.75rem;color:#78350F">
+              Si la aseguradora se hizo cargo, registra el cobro por desplazamiento al sitio.
+            </p>
+            <button class="btn-secondary"
+                    style="width:100%;font-size:0.82rem;padding:0.55rem;border-color:#D97706;color:#92400E"
+                    (click)="abrirCobroVisita(a.id)">
+              <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:4px">receipt_long</span>
+              Registrar cobro por visita
+            </button>
+          </div>
+        }
+
       </div>
     }
+  </div>
+}
+
+<!-- Modal cobro por visita -->
+@if (cobroVisitaId !== null) {
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px">
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;padding:1.5rem;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+        <h2 style="margin:0;font-size:1rem;font-weight:700;color:#1F2937">
+          <span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;margin-right:6px;color:#D97706">receipt_long</span>
+          Cobro por visita — Asignación #{{ cobroVisitaId }}
+        </h2>
+        <button style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:20px;line-height:1" (click)="cerrarCobroVisita()">✕</button>
+      </div>
+
+      <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:0.75rem;margin-bottom:1.25rem;font-size:0.8rem;color:#78350F">
+        El técnico llegó al sitio pero el seguro cubrió el servicio. Registra el cobro por desplazamiento — el cliente será notificado.
+      </div>
+
+      <div class="field" style="margin-bottom:1rem">
+        <label>Monto (Bs.) *</label>
+        <input type="number" min="0.01" step="0.01" [(ngModel)]="cobroMonto"
+               placeholder="Ej. 50.00" style="width:100%;box-sizing:border-box" />
+      </div>
+      <div class="field" style="margin-bottom:1.25rem">
+        <label>Concepto</label>
+        <input type="text" [(ngModel)]="cobroConcepto"
+               placeholder="Cobro por desplazamiento al sitio" style="width:100%;box-sizing:border-box" />
+      </div>
+
+      @if (cobroError) {
+        <div class="alert-danger" style="margin-bottom:1rem">{{ cobroError }}</div>
+      }
+      @if (cobroExito) {
+        <div class="server-success" style="margin-bottom:1rem">✓ Cobro registrado correctamente</div>
+      }
+
+      <div style="display:flex;gap:10px">
+        <button class="btn-secondary" style="flex:1" (click)="cerrarCobroVisita()">Cancelar</button>
+        <button class="btn-primary" style="flex:1;background:#D97706;border-color:#D97706"
+                [disabled]="cobrandoVisita || cobroExito" (click)="registrarCobroVisita()">
+          @if (cobrandoVisita) { <span class="spinner"></span> }
+          @else { Registrar cobro }
+        </button>
+      </div>
+    </div>
   </div>
 }

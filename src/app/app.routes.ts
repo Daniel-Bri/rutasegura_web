@@ -41,6 +41,8 @@ import { BotonSosComponent } from './emergencias/boton-sos/boton-sos.component';
 import { VerificarLlegadaComponent } from './solicitudes/verificar-llegada/verificar-llegada.component';
 import { RecordatoriosComponent } from './reportes/recordatorios/recordatorios.component';
 import { ReporteTallerComponent } from './reportes/reporte-taller/reporte-taller.component';
+import { KpisDashboardComponent } from './reportes/kpis-dashboard/kpis-dashboard.component';
+import { MiTallerPerfilComponent } from './acceso-registro/mi-taller-perfil/mi-taller-perfil.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
@@ -64,6 +66,7 @@ export const routes: Routes = [
       // ── Acceso y Registro ──────────────────────────────────
       { path: 'acceso-registro/cambiar-contrasena',  component: CambiarContrasenaComponent },
       { path: 'acceso-registro/registrar-taller',    component: RegistrarTallerComponent,    canActivate: [roleGuard], data: { roles: ['taller'] } },
+      { path: 'acceso-registro/mi-taller',           component: MiTallerPerfilComponent,     canActivate: [roleGuard], data: { roles: ['taller'] } },
       { path: 'acceso-registro/aprobar-talleres',    component: AprobarTalleresComponent,    canActivate: [roleGuard], data: { roles: ['admin'] } },
       { path: 'acceso-registro/gestionar-usuarios',  component: GestionarUsuariosComponent,  canActivate: [roleGuard], data: { roles: ['admin'] } },
       { path: 'acceso-registro/gestionar-tenants',   component: GestionarTenantsComponent,   canActivate: [roleGuard], data: { roles: ['admin'] } },
@@ -112,6 +115,7 @@ export const routes: Routes = [
       { path: 'reportes/calificar-servicio',  component: CalificarServicioComponent,  canActivate: [roleGuard], data: { roles: ['cliente'] } },
       { path: 'reportes/recordatorios',       component: RecordatoriosComponent,      canActivate: [roleGuard], data: { roles: ['cliente'] } },
       { path: 'reportes/reporte-taller',      component: ReporteTallerComponent,      canActivate: [roleGuard], data: { roles: ['taller'] } },
+      { path: 'reportes/kpis-dashboard',     component: KpisDashboardComponent,      canActivate: [roleGuard], data: { roles: ['admin', 'taller'] } },
 
       // ── Stubs catch-all (rutas no implementadas aún) ───────
       { path: 'emergencias/:cu',       component: DashboardHomeComponent },

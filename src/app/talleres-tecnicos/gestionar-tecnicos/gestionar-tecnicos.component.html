@@ -41,9 +41,18 @@
       </div>
     </div>
 
-    <div class="field" style="max-width:340px">
-      <label for="telefono">Teléfono <span style="color:#9CA3AF">(opcional)</span></label>
-      <input id="telefono" type="tel" [(ngModel)]="form.telefono" placeholder="+591 7XXXXXXX" />
+    <div class="form-row">
+      <div class="field">
+        <label for="telefono">Teléfono <span style="color:#9CA3AF">(opcional)</span></label>
+        <input id="telefono" type="tel" [(ngModel)]="form.telefono" placeholder="+591 7XXXXXXX" />
+      </div>
+      <div class="field">
+        <label for="email">Email de cuenta del técnico <span style="color:#9CA3AF">(opcional)</span></label>
+        <input id="email" type="email" [(ngModel)]="form.email" placeholder="tecnico@email.com" />
+        <small style="color:#6B7280;font-size:0.78rem;margin-top:3px;display:block">
+          Si el técnico ya tiene cuenta en el sistema, vincula su perfil para que vea sus servicios en la app móvil.
+        </small>
+      </div>
     </div>
 
     @if (formError) {
@@ -93,6 +102,7 @@
           <th>Nombre</th>
           <th>Especialidad</th>
           <th>Teléfono</th>
+          <th>Cuenta</th>
           <th>Estado</th>
           <th>Acciones</th>
         </tr>
@@ -106,6 +116,15 @@
             <td class="td-contact">
               @if (t.telefono) { {{ t.telefono }} }
               @else { <span class="text-muted">—</span> }
+            </td>
+            <td>
+              @if (t.usuario_id) {
+                <span class="badge badge-success" title="Cuenta vinculada — el técnico puede ver sus servicios en la app móvil">
+                  <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle">link</span> Vinculado
+                </span>
+              } @else {
+                <span class="badge badge-muted" title="Sin cuenta vinculada — edita el técnico e ingresa su email para vincularlo">Sin cuenta</span>
+              }
             </td>
             <td>
               <span class="badge" [ngClass]="badgeEstado(t.estado)">{{ t.estado }}</span>
