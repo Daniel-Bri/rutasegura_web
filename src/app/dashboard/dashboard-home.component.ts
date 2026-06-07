@@ -1,15 +1,19 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { Chart, registerables } from 'chart.js';
 import { AuthService } from '../acceso-registro/auth.service';
 import { ReportesService, KpisResponse } from '../reportes/reportes.service';
+
+Chart.register(...registerables);
 
 interface QuickLink { icon: string; label: string; route: string; bg: string; color: string; }
 
 @Component({
   selector: 'app-dashboard-home',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   template: `
     <!-- Bienvenida -->
     <div class="welcome-row">
@@ -19,62 +23,6 @@ interface QuickLink { icon: string; label: string; route: string; bg: string; co
       </div>
       <span class="role-badge">{{ roleLabel }}</span>
     </div>
-
-    <!-- KPIs rápidos para taller y admin -->
-    @if ((role === 'taller' || role === 'admin') && kpis) {
-      <p class="section-label">Indicadores clave</p>
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <span class="material-symbols-outlined kpi-icon" style="color:#2563EB">emergency</span>
-          <div>
-            <p class="kpi-val">{{ kpis.total_incidentes }}</p>
-            <p class="kpi-lbl">Total incidentes</p>
-          </div>
-        </div>
-        <div class="kpi-card">
-          <span class="material-symbols-outlined kpi-icon" style="color:#16A34A">task_alt</span>
-          <div>
-            <p class="kpi-val">{{ kpis.total_servicios_completados }}</p>
-            <p class="kpi-lbl">Servicios completados</p>
-          </div>
-        </div>
-        <div class="kpi-card">
-          <span class="material-symbols-outlined kpi-icon" style="color:#D97706">timer</span>
-          <div>
-            <p class="kpi-val">{{ kpis.tiempo_promedio_asignacion_min }} <span style="font-size:13px;font-weight:500">min</span></p>
-            <p class="kpi-lbl">Tiempo medio asignación</p>
-          </div>
-        </div>
-        <div class="kpi-card">
-          <span class="material-symbols-outlined kpi-icon" style="color:#7C3AED">build_circle</span>
-          <div>
-            <p class="kpi-val">{{ kpis.tiempo_promedio_servicio_min }} <span style="font-size:13px;font-weight:500">min</span></p>
-            <p class="kpi-lbl">Tiempo medio servicio</p>
-          </div>
-        </div>
-        <div class="kpi-card">
-          <span class="material-symbols-outlined kpi-icon" style="color:#EF4444">cancel</span>
-          <div>
-            <p class="kpi-val">{{ kpis.casos_cancelados_asignacion }}</p>
-            <p class="kpi-lbl">Casos cancelados</p>
-          </div>
-        </div>
-        <div class="kpi-card">
-          <span class="material-symbols-outlined kpi-icon" [style.color]="slaColor()">verified</span>
-          <div>
-            <p class="kpi-val" [style.color]="slaColor()">{{ kpis.sla_compliance_pct }}%</p>
-            <p class="kpi-lbl">Cumplimiento SLA</p>
-          </div>
-        </div>
-      </div>
-    }
-    @if ((role === 'taller' || role === 'admin') && kpiCargando) {
-      <div style="display:flex;gap:12px;margin-bottom:24px">
-        @for (i of [1,2,3,4,5,6]; track i) {
-          <div style="flex:1;height:80px;background:#F3F4F6;border-radius:12px;animation:pulse 1.5s ease-in-out infinite"></div>
-        }
-      </div>
-    }
 
     <!-- Accesos rápidos -->
     <p class="section-label">Accesos rápidos</p>
@@ -88,6 +36,165 @@ interface QuickLink { icon: string; label: string; route: string; bg: string; co
         </a>
       }
     </div>
+
+    <!-- KPIs completo para taller y admin -->
+    @if (role === 'taller' || role === 'admin') {
+      <div style="margin-top:32px">
+        <!-- Encabezado KPIs + filtros -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+          <div>
+            <p class="section-label" style="margin:0">Indicadores clave operacionales</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input type="date" [(ngModel)]="desde"
+              style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:12px;color:#374151"/>
+            <input type="date" [(ngModel)]="hasta"
+              style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:12px;color:#374151"/>
+            <input *ngIf="role === 'admin'" type="number" [(ngModel)]="tenantId" placeholder="Tenant ID"
+              style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:12px;width:100px;color:#374151"/>
+            <button (click)="cargarKpis()"
+              style="padding:6px 14px;background:#1D4ED8;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">
+              <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:4px">refresh</span>
+              Actualizar
+            </button>
+          </div>
+        </div>
+
+        <!-- Skeleton cargando -->
+        @if (kpiCargando) {
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px">
+            @for (i of [1,2,3,4,5,6,7,8]; track i) {
+              <div style="height:80px;background:#F3F4F6;border-radius:12px;animation:pulse 1.5s ease-in-out infinite"></div>
+            }
+          </div>
+        }
+
+        <!-- Error -->
+        @if (kpiError && !kpiCargando) {
+          <div style="background:#FEE2E2;border:1px solid #FCA5A5;border-radius:10px;padding:12px 16px;color:#DC2626;font-size:13px;margin-bottom:16px">
+            {{ kpiError }}
+          </div>
+        }
+
+        @if (kpis && !kpiCargando) {
+
+          <!-- Fila 1: Tarjetas numéricas -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px;margin-bottom:20px">
+
+            <div class="kpi-card">
+              <span class="material-symbols-outlined kpi-icon" style="color:#2563EB">emergency</span>
+              <div>
+                <p class="kpi-val">{{ kpis.total_incidentes }}</p>
+                <p class="kpi-lbl">Total incidentes</p>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <span class="material-symbols-outlined kpi-icon" style="color:#16A34A">task_alt</span>
+              <div>
+                <p class="kpi-val">{{ kpis.total_servicios_completados }}</p>
+                <p class="kpi-lbl">Servicios completados</p>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <span class="material-symbols-outlined kpi-icon" style="color:#D97706">timer</span>
+              <div>
+                <p class="kpi-val">{{ kpis.tiempo_promedio_asignacion_min }}<span class="kpi-unit">min</span></p>
+                <p class="kpi-lbl">Tiempo medio asignación</p>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <span class="material-symbols-outlined kpi-icon" style="color:#0891B2">directions_car</span>
+              <div>
+                <p class="kpi-val">{{ kpis.tiempo_promedio_llegada_min }}<span class="kpi-unit">min</span></p>
+                <p class="kpi-lbl">Tiempo medio llegada</p>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <span class="material-symbols-outlined kpi-icon" style="color:#7C3AED">build_circle</span>
+              <div>
+                <p class="kpi-val">{{ kpis.tiempo_promedio_servicio_min }}<span class="kpi-unit">min</span></p>
+                <p class="kpi-lbl">Tiempo medio servicio</p>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <span class="material-symbols-outlined kpi-icon" style="color:#EF4444">cancel</span>
+              <div>
+                <p class="kpi-val">{{ kpis.casos_cancelados_asignacion }}</p>
+                <p class="kpi-lbl">Casos cancelados</p>
+                <p style="margin:1px 0 0;font-size:10px;color:#9CA3AF">{{ kpis.casos_cancelados_incidente }} sin atender</p>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <span class="material-symbols-outlined kpi-icon" [style.color]="slaColor()">verified</span>
+              <div>
+                <p class="kpi-val" [style.color]="slaColor()">{{ kpis.sla_compliance_pct }}%</p>
+                <p class="kpi-lbl">Cumplimiento SLA</p>
+                <p style="margin:1px 0 0;font-size:10px;color:#9CA3AF">≤ {{ kpis.sla_minutos }} min</p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Fila 2: Gráficas -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:20px">
+
+            <div style="background:white;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.07)">
+              <h3 style="margin:0 0 14px;font-size:14px;font-weight:700;color:#111827">Incidentes por tipo</h3>
+              <canvas #chartTipos style="max-height:220px"></canvas>
+            </div>
+
+            <div style="background:white;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.07)">
+              <h3 style="margin:0 0 14px;font-size:14px;font-weight:700;color:#111827">Cumplimiento SLA</h3>
+              <canvas #chartSLA style="max-height:220px"></canvas>
+            </div>
+
+          </div>
+
+          <!-- Fila 3: Talleres eficientes -->
+          @if (kpis.talleres_eficientes.length > 0) {
+            <div style="background:white;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:20px">
+              <h3 style="margin:0 0 14px;font-size:14px;font-weight:700;color:#111827">Talleres más eficientes (top 5)</h3>
+              <canvas #chartEfic style="max-height:200px"></canvas>
+            </div>
+          }
+
+          <!-- Fila 4: Zonas calientes -->
+          @if (kpis.zonas_calientes.length > 0) {
+            <div style="background:white;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.07)">
+              <h3 style="margin:0 0 14px;font-size:14px;font-weight:700;color:#111827">Zonas con más incidentes</h3>
+              <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <thead>
+                  <tr style="border-bottom:2px solid #F3F4F6">
+                    <th style="text-align:left;padding:7px 10px;color:#6B7280;font-weight:600">#</th>
+                    <th style="text-align:left;padding:7px 10px;color:#6B7280;font-weight:600">Latitud</th>
+                    <th style="text-align:left;padding:7px 10px;color:#6B7280;font-weight:600">Longitud</th>
+                    <th style="text-align:right;padding:7px 10px;color:#6B7280;font-weight:600">Incidentes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let z of kpis.zonas_calientes; let i = index"
+                    [style.background]="i % 2 === 0 ? 'white' : '#F9FAFB'">
+                    <td style="padding:7px 10px;color:#6B7280">{{ i + 1 }}</td>
+                    <td style="padding:7px 10px;color:#374151;font-family:monospace">{{ z.lat }}</td>
+                    <td style="padding:7px 10px;color:#374151;font-family:monospace">{{ z.lon }}</td>
+                    <td style="padding:7px 10px;text-align:right">
+                      <span style="background:#DBEAFE;color:#1D4ED8;padding:2px 10px;border-radius:20px;font-weight:700">{{ z.total }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          }
+
+        }
+      </div>
+    }
   `,
   styles: [`
     .welcome-row {
@@ -133,11 +240,6 @@ interface QuickLink { icon: string; label: string; route: string; bg: string; co
     }
     .quick-label { font-size: 0.82rem; font-weight: 600; color: var(--text); text-align: center; }
 
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 12px; margin-bottom: 24px;
-    }
     .kpi-card {
       background: #fff; border-radius: 12px;
       padding: 14px 16px;
@@ -145,15 +247,27 @@ interface QuickLink { icon: string; label: string; route: string; bg: string; co
       border: 1px solid #F3F4F6;
       box-shadow: 0 1px 4px rgba(0,0,0,.05);
     }
-    .kpi-icon { font-size: 28px; }
-    .kpi-val  { margin: 0; font-size: 22px; font-weight: 800; color: #111827; line-height: 1.2; }
+    .kpi-icon { font-size: 26px; }
+    .kpi-val  { margin: 0; font-size: 20px; font-weight: 800; color: #111827; line-height: 1.2; }
     .kpi-lbl  { margin: 2px 0 0; font-size: 11px; color: #6B7280; }
+    .kpi-unit { font-size: 12px; font-weight: 500; margin-left: 2px; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
   `],
 })
-export class DashboardHomeComponent implements OnInit {
+export class DashboardHomeComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('chartTipos') chartTiposRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('chartSLA')   chartSLARef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('chartEfic')  chartEficRef!: ElementRef<HTMLCanvasElement>;
+
   kpis: KpisResponse | null = null;
   kpiCargando = false;
+  kpiError = '';
+  desde = '';
+  hasta = '';
+  tenantId: number | undefined;
+
+  private charts: Chart[] = [];
+  private kpisLoaded = false;
 
   constructor(
     private auth: AuthService,
@@ -163,11 +277,79 @@ export class DashboardHomeComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.role === 'taller' || this.role === 'admin') {
-      this.kpiCargando = true;
-      this.reportesSvc.kpis().subscribe({
-        next: (data) => { this.kpis = data; this.kpiCargando = false; this.cdr.detectChanges(); },
-        error: ()     => { this.kpiCargando = false; this.cdr.detectChanges(); },
-      });
+      this.cargarKpis();
+    }
+  }
+
+  ngAfterViewInit(): void {}
+
+  ngOnDestroy(): void {
+    this.charts.forEach(c => c.destroy());
+  }
+
+  cargarKpis(): void {
+    this.kpiCargando = true;
+    this.kpiError = '';
+    this.charts.forEach(c => c.destroy());
+    this.charts = [];
+    this.kpisLoaded = false;
+
+    const params: { desde?: string; hasta?: string; tenant_id?: number } = {};
+    if (this.desde) params.desde = this.desde;
+    if (this.hasta) params.hasta = this.hasta;
+    if (this.tenantId) params.tenant_id = this.tenantId;
+
+    this.reportesSvc.kpis(params).subscribe({
+      next: (data) => {
+        this.kpis = data;
+        this.kpiCargando = false;
+        this.kpisLoaded = true;
+        this.cdr.detectChanges();
+        setTimeout(() => this.renderCharts(), 80);
+      },
+      error: (e) => {
+        this.kpiError = e?.error?.detail ?? 'Error al cargar KPIs';
+        this.kpiCargando = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private renderCharts(): void {
+    if (!this.kpis) return;
+
+    if (this.chartTiposRef?.nativeElement) {
+      const tipos  = this.kpis.incidentes_por_tipo;
+      const labels = Object.keys(tipos).map(k => k.charAt(0).toUpperCase() + k.slice(1));
+      const data   = Object.values(tipos);
+      this.charts.push(new Chart(this.chartTiposRef.nativeElement, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: ['#3B82F6','#F59E0B','#EF4444','#10B981','#8B5CF6','#F97316'] }] },
+        options: { plugins: { legend: { position: 'bottom' } }, responsive: true },
+      }));
+    }
+
+    if (this.chartSLARef?.nativeElement) {
+      const dentro = this.kpis.dentro_sla;
+      const fuera  = this.kpis.total_servicios_completados - dentro;
+      this.charts.push(new Chart(this.chartSLARef.nativeElement, {
+        type: 'doughnut',
+        data: {
+          labels: [`Dentro SLA (≤${this.kpis.sla_minutos} min)`, 'Fuera de SLA'],
+          datasets: [{ data: [dentro, fuera], backgroundColor: ['#10B981', '#EF4444'] }],
+        },
+        options: { plugins: { legend: { position: 'bottom' } }, responsive: true },
+      }));
+    }
+
+    if (this.chartEficRef?.nativeElement && this.kpis.talleres_eficientes.length > 0) {
+      const nombres = this.kpis.talleres_eficientes.map(t => t.nombre);
+      const tiempos = this.kpis.talleres_eficientes.map(t => t.tiempo_promedio_min);
+      this.charts.push(new Chart(this.chartEficRef.nativeElement, {
+        type: 'bar',
+        data: { labels: nombres, datasets: [{ label: 'Tiempo promedio (min)', data: tiempos, backgroundColor: '#3B82F6', borderRadius: 6 }] },
+        options: { indexAxis: 'y', plugins: { legend: { display: false } }, responsive: true, scales: { x: { beginAtZero: true } } },
+      }));
     }
   }
 
@@ -202,7 +384,6 @@ export class DashboardHomeComponent implements OnInit {
         { icon: 'receipt_long',     label: 'Cotizaciones',         route: '/app/cotizacion-pagos/generar-cotizacion',           bg: '#F5F3FF', color: '#7C3AED' },
         { icon: 'chat',             label: 'Chat',                 route: '/app/comunicacion/chat',                            bg: '#ECFDF5', color: '#16A34A' },
         { icon: 'bar_chart',        label: 'Reporte Taller',       route: '/app/reportes/metricas-taller',                     bg: '#FFF7ED', color: '#D97706' },
-        { icon: 'monitoring',       label: 'KPIs Dashboard',       route: '/app/reportes/kpis-dashboard',                      bg: '#EFF6FF', color: '#1D4ED8' },
       ],
       tecnico: [
         { icon: 'build',            label: 'Estado Servicio',      route: '/app/talleres-tecnicos/actualizar-estado-servicio',  bg: '#EFF6FF', color: '#2563EB' },
@@ -215,7 +396,6 @@ export class DashboardHomeComponent implements OnInit {
         { icon: 'manage_accounts',  label: 'Gestionar Usuarios',   route: '/app/acceso-registro/gestionar-usuarios',            bg: '#EFF6FF', color: '#2563EB' },
         { icon: 'policy',           label: 'Auditoría',            route: '/app/reportes/auditoria',                           bg: '#FEF2F2', color: '#EF4444' },
         { icon: 'bar_chart',        label: 'Reporte Global',       route: '/app/reportes/metricas-globales',                   bg: '#F5F3FF', color: '#7C3AED' },
-        { icon: 'monitoring',       label: 'KPIs Dashboard',       route: '/app/reportes/kpis-dashboard',                      bg: '#EFF6FF', color: '#1D4ED8' },
       ],
     };
     return all[this.role] ?? [];

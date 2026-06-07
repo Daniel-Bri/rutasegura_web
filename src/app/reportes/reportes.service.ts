@@ -107,6 +107,7 @@ export interface ZonaCaliente {
 
 export interface KpisResponse {
   tiempo_promedio_asignacion_min: number;
+  tiempo_promedio_llegada_min:    number;
   tiempo_promedio_servicio_min:   number;
   total_incidentes:               number;
   total_servicios_completados:    number;
