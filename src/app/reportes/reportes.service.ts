@@ -75,6 +75,15 @@ export class ReportesService {
     return this.http.get<TallerRanking[]>(`${this.API}/ranking-talleres`).pipe(timeout(10000));
   }
 
+  // Backup / Restore
+  descargarBackup(): Observable<Blob> {
+    return this.http.get(`${this.API}/backup`, { responseType: 'blob' }).pipe(timeout(60000));
+  }
+
+  restaurarBackup(data: object): Observable<{ ok: boolean; tablas_restauradas: string[] }> {
+    return this.http.post<{ ok: boolean; tablas_restauradas: string[] }>(`${this.API}/restore`, data).pipe(timeout(60000));
+  }
+
   kpis(params: { desde?: string; hasta?: string; tenant_id?: number } = {}): Observable<KpisResponse> {
     const p: string[] = [];
     if (params.desde)     p.push(`desde=${encodeURIComponent(params.desde)}`);

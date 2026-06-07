@@ -44,6 +44,7 @@ import { ReporteTallerComponent } from './reportes/reporte-taller/reporte-taller
 import { KpisDashboardComponent } from './reportes/kpis-dashboard/kpis-dashboard.component';
 import { GestionarReputacionComponent } from './reportes/gestionar-reputacion/gestionar-reputacion.component';
 import { RankingTalleresComponent } from './reportes/ranking-talleres/ranking-talleres.component';
+import { BackupRestoreComponent } from './reportes/backup-restore/backup-restore.component';
 import { MiTallerPerfilComponent } from './acceso-registro/mi-taller-perfil/mi-taller-perfil.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
@@ -120,6 +121,7 @@ export const routes: Routes = [
       { path: 'reportes/kpis-dashboard',       component: KpisDashboardComponent,        canActivate: [roleGuard], data: { roles: ['admin', 'taller'] } },
       { path: 'reportes/gestionar-reputacion', component: GestionarReputacionComponent, canActivate: [roleGuard], data: { roles: ['admin'] } },
       { path: 'reportes/ranking-talleres',     component: RankingTalleresComponent,     canActivate: [roleGuard], data: { roles: ['cliente', 'taller', 'admin'] } },
+      { path: 'reportes/backup-restore',       component: BackupRestoreComponent,        canActivate: [roleGuard], data: { roles: ['admin'] } },
 
       // ── Stubs catch-all (rutas no implementadas aún) ───────
       { path: 'emergencias/:cu',       component: DashboardHomeComponent },

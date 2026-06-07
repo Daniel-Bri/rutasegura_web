@@ -109,6 +109,7 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
         { label: 'Métricas Globales',   route: '/app/reportes/metricas-globales',     roles: ['admin'] },
         { label: 'Gestionar Reputación',route: '/app/reportes/gestionar-reputacion',  roles: ['admin'] },
         { label: 'Auditoría',           route: '/app/reportes/auditoria',             roles: ['admin'] },
+        { label: 'Backup / Restore',    route: '/app/reportes/backup-restore',        roles: ['admin'] },
       ],
     },
     {
