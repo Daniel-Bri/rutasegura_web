@@ -26,6 +26,7 @@ export interface TecnicoResponse {
   nombre: string;
   especialidad: string;
   telefono?: string;
+  email?: string;
   estado: string;
   activo: boolean;
   created_at: string;

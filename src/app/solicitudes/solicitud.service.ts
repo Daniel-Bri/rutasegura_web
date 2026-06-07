@@ -53,8 +53,21 @@ export interface SolicitudDisponible {
   tiene_audio: boolean;
   created_at: string;
   es_sos: boolean;
-  distancia_km: number | null;   // §4.6 Motor IA
-  score_ia: number;              // §4.6 Relevancia Yango-like
+  distancia_km: number | null;
+  eta_min: number | null;
+  score_ia: number;
+}
+
+export interface TallerCandidato {
+  taller_id: number;
+  nombre: string;
+  direccion: string;
+  telefono: string | null;
+  rating: number;
+  especialidades: string[];
+  distancia_km: number | null;
+  eta_min: number | null;
+  estado_asignacion: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -99,6 +112,10 @@ export class SolicitudService {
     return this.http
       .patch<{ asignacion_id: number; estado: string; msg: string }>(`${this.API}/${incidenteId}/rechazar`, {})
       .pipe(timeout(10000));
+  }
+
+  tallersCandidatos(incidenteId: number): Observable<TallerCandidato[]> {
+    return this.http.get<TallerCandidato[]>(`${this.API}/${incidenteId}/talleres-candidatos`).pipe(timeout(10000));
   }
 
   pendientesCalificacion(): Observable<CalificacionPendiente[]> {

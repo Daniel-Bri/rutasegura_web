@@ -1,102 +1,239 @@
-<div class="page-container">
-  <div class="page-header" style="margin-bottom:16px">
-    <h2 class="page-title">Reporte del Taller</h2>
-    @if (resumen) {
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary btn-sm" (click)="exportarCSV()">Exportar CSV</button>
-        <button class="btn btn-primary btn-sm" (click)="imprimir()">Imprimir</button>
-      </div>
-    }
+<!-- CU34 — Reporte del Taller -->
+
+<div class="page-header no-print">
+  <div>
+    <h1 class="page-title">Reporte del Taller</h1>
+    <p class="page-sub">CU34 · Filtrá por fecha y monto para generar tu reporte</p>
+  </div>
+  @if (resultado) {
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+      <button class="btn-secondary" style="width:auto;padding:0.4rem 0.9rem;font-size:0.8rem;" (click)="exportarCSV()">
+        <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:3px;">download</span>CSV
+      </button>
+      <button class="btn-secondary" style="width:auto;padding:0.4rem 0.9rem;font-size:0.8rem;" (click)="exportarExcel()">
+        <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:3px;">table_chart</span>Excel
+      </button>
+      <button class="btn-secondary" style="width:auto;padding:0.4rem 0.9rem;font-size:0.8rem;" (click)="exportarPDF()">
+        <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:3px;">picture_as_pdf</span>PDF
+      </button>
+    </div>
+  }
+</div>
+
+<!-- ── Card de filtros ──────────────────────────────────── -->
+<div class="form-card no-print" style="margin-bottom:1.25rem;padding:0;overflow:hidden;">
+
+  <!-- Header de la card -->
+  <div style="background:var(--primary);padding:0.75rem 1.1rem;display:flex;align-items:center;gap:0.5rem;">
+    <span class="material-symbols-outlined" style="font-size:18px;color:white;">filter_list</span>
+    <span style="color:white;font-weight:700;font-size:0.95rem;">Filtros de búsqueda</span>
   </div>
 
-  <p class="text-muted">Generado: {{ fechaGeneracion | date:'dd/MM/yyyy HH:mm' }}</p>
+  <div style="padding:1.1rem;">
 
-  @if (loading) {
-    <p class="text-muted">Generando reporte...</p>
-  } @else if (error) {
-    <div class="alert alert-error">{{ error }}</div>
-  } @else if (resumen) {
-    <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:16px">
-      <div class="stat-card card">
-        <div class="card-body">
-          <p class="text-muted">Total servicios</p>
-          <h3>{{ resumen.total_servicios }}</h3>
-        </div>
+    <!-- ── Fila 1: Período rápido ─────────────────────── -->
+    <div style="font-size:0.72rem;font-weight:700;color:#6B7280;letter-spacing:.05em;margin-bottom:0.5rem;">PERÍODO RÁPIDO</div>
+    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+      @for (c of periodoChips; track c.key) {
+        <button type="button"
+          (click)="seleccionarChip(c.key)"
+          style="flex:1;padding:0.5rem 0;font-size:0.8rem;font-weight:600;border-radius:8px;cursor:pointer;border:1px solid;transition:all 0.15s;"
+          [style.background]="chipPeriodo === c.key ? 'var(--primary)' : '#F3F4F6'"
+          [style.color]="chipPeriodo === c.key ? 'white' : '#374151'"
+          [style.border-color]="chipPeriodo === c.key ? 'var(--primary)' : '#E5E7EB'">
+          {{ c.label }}
+        </button>
+      }
+    </div>
+
+    <div style="border-top:1px solid #E5E7EB;margin-bottom:1rem;"></div>
+
+    <!-- ── Fila 2: Rango de fechas ────────────────────── -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+      <span style="font-size:0.72rem;font-weight:700;color:#6B7280;letter-spacing:.05em;">RANGO DE FECHAS</span>
+      @if (fechaInicio || fechaFin) {
+        <button type="button" (click)="limpiarFechas()"
+          style="font-size:0.75rem;color:var(--primary);font-weight:600;background:none;border:none;cursor:pointer;padding:0;">
+          Limpiar fechas
+        </button>
+      }
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;">
+      <div>
+        <label style="font-size:0.78rem;color:#6B7280;display:block;margin-bottom:4px;">Desde</label>
+        <input type="date" [(ngModel)]="fechaInicio" [max]="fechaFin || hoy"
+          (change)="onFechaChange()"
+          style="width:100%;padding:0.45rem 0.6rem;border:1px solid #E5E7EB;border-radius:8px;font-size:0.88rem;color:#374151;background:#F9FAFB;">
       </div>
-      <div class="stat-card card">
-        <div class="card-body">
-          <p class="text-muted">Finalizados</p>
-          <h3>{{ resumen.servicios_finalizados }}</h3>
-        </div>
-      </div>
-      <div class="stat-card card">
-        <div class="card-body">
-          <p class="text-muted">Pagados</p>
-          <h3>{{ resumen.servicios_pagados }}</h3>
-        </div>
-      </div>
-      <div class="stat-card card">
-        <div class="card-body">
-          <p class="text-muted">Ingresos brutos</p>
-          <h3>Bs {{ resumen.ingresos_brutos | number:'1.2-2' }}</h3>
-        </div>
-      </div>
-      <div class="stat-card card">
-        <div class="card-body">
-          <p class="text-muted">Comisión (10%)</p>
-          <h3>Bs {{ resumen.comision_plataforma | number:'1.2-2' }}</h3>
-        </div>
-      </div>
-      <div class="stat-card card">
-        <div class="card-body">
-          <p class="text-muted">Ingresos netos</p>
-          <h3>Bs {{ resumen.ingresos_netos | number:'1.2-2' }}</h3>
-        </div>
-      </div>
-      <div class="stat-card card">
-        <div class="card-body">
-          <p class="text-muted">Ticket promedio</p>
-          <h3>Bs {{ resumen.ticket_promedio | number:'1.2-2' }}</h3>
-        </div>
-      </div>
-      <div class="stat-card card">
-        <div class="card-body">
-          <p class="text-muted">Calificación promedio</p>
-          <h3>
-            @if (resumen.promedio_calificacion != null) {
-              {{ resumen.promedio_calificacion | number:'1.1-1' }} / 5
-            } @else {
-              Sin calificaciones
-            }
-          </h3>
-        </div>
+      <div>
+        <label style="font-size:0.78rem;color:#6B7280;display:block;margin-bottom:4px;">Hasta</label>
+        <input type="date" [(ngModel)]="fechaFin" [min]="fechaInicio" [max]="hoy"
+          (change)="onFechaChange()"
+          style="width:100%;padding:0.45rem 0.6rem;border:1px solid #E5E7EB;border-radius:8px;font-size:0.88rem;color:#374151;background:#F9FAFB;">
       </div>
     </div>
 
-    @if (resumen.detalle_pagos.length > 0) {
-      <h3 style="margin-top:24px">Detalle de pagos</h3>
-      <table class="table" style="margin-top:8px">
+    <div style="border-top:1px solid #E5E7EB;margin-bottom:1rem;"></div>
+
+    <!-- ── Fila 3: Monto mínimo ───────────────────────── -->
+    <div style="font-size:0.72rem;font-weight:700;color:#6B7280;letter-spacing:.05em;margin-bottom:0.5rem;">MONTO MÍNIMO PAGADO</div>
+    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+      @for (b of montoBtns; track b.label) {
+        <button type="button"
+          (click)="montoMinimo = b.valor"
+          style="flex:1;padding:0.5rem 0;font-size:0.8rem;font-weight:600;border-radius:8px;cursor:pointer;border:1px solid;transition:all 0.15s;"
+          [style.background]="montoMinimo === b.valor ? '#16A34A' : '#F3F4F6'"
+          [style.color]="montoMinimo === b.valor ? 'white' : '#374151'"
+          [style.border-color]="montoMinimo === b.valor ? '#16A34A' : '#E5E7EB'">
+          {{ b.label }}
+        </button>
+      }
+    </div>
+
+    <div style="border-top:1px solid #E5E7EB;margin-bottom:1rem;"></div>
+
+    <!-- ── Fila 4: Voz + Buscar ───────────────────────── -->
+    <div style="font-size:0.72rem;font-weight:700;color:#6B7280;letter-spacing:.05em;margin-bottom:0.5rem;">CONSULTA POR VOZ (OPCIONAL)</div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <button type="button"
+        [class]="grabando ? 'btn-danger' : 'btn-secondary'"
+        style="width:auto;padding:0.5rem 0.75rem;margin:0;flex-shrink:0;"
+        (click)="grabando ? detenerGrabacion() : iniciarGrabacion()"
+        [title]="grabando ? 'Detener' : 'Hablar para filtrar'">
+        <span class="material-symbols-outlined" style="font-size:18px;display:block;line-height:1;">
+          {{ grabando ? 'stop_circle' : 'mic' }}
+        </span>
+      </button>
+      @if (grabando) {
+        <span style="font-size:0.82rem;color:var(--danger);font-weight:600;display:flex;align-items:center;gap:6px;">
+          <span style="width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 1s infinite;display:inline-block;"></span>
+          Escuchando…
+        </span>
+      } @else {
+        <span style="font-size:0.82rem;color:#9CA3AF;">Decí "este mes", "3 meses", "todo", etc.</span>
+      }
+      <button class="btn-primary"
+        style="width:auto;padding:0.55rem 1.5rem;margin:0 0 0 auto;flex-shrink:0;"
+        (click)="consultar()"
+        [disabled]="loading">
+        @if (loading) { <span class="spinner"></span> }
+        @else {
+          <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">search</span>
+          Generar reporte
+        }
+      </button>
+    </div>
+
+  </div>
+</div>
+
+@if (errorMsg) { <div class="alert-danger no-print">{{ errorMsg }}</div> }
+
+<!-- ── Resultado ─────────────────────────────────────────── -->
+@if (resultado) {
+
+  <!-- Encabezado período -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.25rem;">
+    <div>
+      <h2 style="font-size:1.1rem;font-weight:800;color:var(--text);margin:0;">{{ resultado.taller_nombre }}</h2>
+      <div style="font-size:0.82rem;color:#6B7280;margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">calendar_month</span>
+        Período: <strong>{{ resultado.periodo_label }}</strong>
+        @if (fechaGeneracion) { &nbsp;·&nbsp;Generado: {{ fechaGeneracion | date:'dd/MM/yyyy HH:mm' }} }
+        @if (montoMinimo !== null) {
+          &nbsp;·&nbsp;
+          <span style="background:#DCFCE7;color:#16A34A;padding:1px 8px;border-radius:20px;font-weight:700;font-size:0.78rem;">
+            Pagos ≥ Bs {{ montoMinimo }}
+          </span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs grid -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:0.85rem;margin-bottom:1.25rem;">
+    <div class="form-card" style="padding:0.9rem 1rem;border-left:3px solid var(--primary);">
+      <div style="font-size:0.72rem;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Total servicios</div>
+      <div style="font-size:1.8rem;font-weight:800;color:var(--primary);line-height:1;">{{ resultado.total_servicios }}</div>
+    </div>
+    <div class="form-card" style="padding:0.9rem 1rem;border-left:3px solid #16A34A;">
+      <div style="font-size:0.72rem;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Finalizados</div>
+      <div style="font-size:1.8rem;font-weight:800;color:#16A34A;line-height:1;">{{ resultado.servicios_finalizados }}</div>
+    </div>
+    <div class="form-card" style="padding:0.9rem 1rem;border-left:3px solid #0EA5E9;">
+      <div style="font-size:0.72rem;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Pagados</div>
+      <div style="font-size:1.8rem;font-weight:800;color:#0EA5E9;line-height:1;">{{ resultado.servicios_pagados }}</div>
+    </div>
+    <div class="form-card" style="padding:0.9rem 1rem;border-left:3px solid #F59E0B;">
+      <div style="font-size:0.72rem;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Calificación</div>
+      @if (resultado.promedio_calificacion != null) {
+        <div style="font-size:1.8rem;font-weight:800;color:#F59E0B;line-height:1;">
+          {{ resultado.promedio_calificacion | number:'1.1-1' }}<span style="font-size:0.9rem;font-weight:500;color:#6B7280;"> /5</span>
+        </div>
+        <div style="font-size:0.72rem;color:#9CA3AF;">{{ resultado.total_calificaciones }} reseña{{ resultado.total_calificaciones !== 1 ? 's' : '' }}</div>
+      } @else {
+        <div style="font-size:1rem;color:#9CA3AF;margin-top:4px;">Sin calificaciones</div>
+      }
+    </div>
+    <div class="form-card" style="padding:0.9rem 1rem;border-left:3px solid #374151;">
+      <div style="font-size:0.72rem;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Ingresos brutos</div>
+      <div style="font-size:1.4rem;font-weight:800;color:var(--text);line-height:1;">Bs {{ resultado.ingresos_brutos | number:'1.2-2' }}</div>
+    </div>
+    <div class="form-card" style="padding:0.9rem 1rem;border-left:3px solid #DC2626;">
+      <div style="font-size:0.72rem;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Comisión (10%)</div>
+      <div style="font-size:1.4rem;font-weight:800;color:#DC2626;line-height:1;">Bs {{ resultado.comision_plataforma | number:'1.2-2' }}</div>
+    </div>
+    <div class="form-card" style="padding:0.9rem 1rem;border-left:3px solid #16A34A;">
+      <div style="font-size:0.72rem;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Ingresos netos</div>
+      <div style="font-size:1.4rem;font-weight:800;color:#16A34A;line-height:1;">Bs {{ resultado.ingresos_netos | number:'1.2-2' }}</div>
+    </div>
+    <div class="form-card" style="padding:0.9rem 1rem;border-left:3px solid #D97706;">
+      <div style="font-size:0.72rem;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Ticket promedio</div>
+      <div style="font-size:1.4rem;font-weight:800;color:#D97706;line-height:1;">Bs {{ resultado.ticket_promedio | number:'1.2-2' }}</div>
+    </div>
+  </div>
+
+  <!-- Detalle de pagos filtrados -->
+  @if (pagosFiltrados.length > 0) {
+    <div class="table-card">
+      <div style="padding:0.7rem 1rem;border-bottom:1px solid #E5E7EB;font-weight:700;font-size:0.88rem;display:flex;align-items:center;gap:0.5rem;">
+        <span class="material-symbols-outlined" style="font-size:17px;color:var(--primary);">receipt_long</span>
+        Detalle de pagos
+        <span class="badge badge-muted" style="margin-left:auto;">{{ pagosFiltrados.length }}</span>
+        @if (montoMinimo !== null) {
+          <span class="badge" style="background:#DCFCE7;color:#16A34A;margin-left:0.25rem;">≥ Bs {{ montoMinimo }}</span>
+        }
+      </div>
+      <table class="data-table">
         <thead>
-          <tr>
-            <th>#Pago</th>
-            <th>Incidente</th>
-            <th>Monto (Bs)</th>
-            <th>Método</th>
-            <th>Fecha</th>
-          </tr>
+          <tr><th>#Pago</th><th>Incidente</th><th>Monto</th><th>Método</th><th>Fecha</th></tr>
         </thead>
         <tbody>
-          @for (p of resumen.detalle_pagos; track p.pago_id) {
+          @for (p of pagosFiltrados; track p.pago_id) {
             <tr>
-              <td>{{ p.pago_id }}</td>
+              <td class="td-id">{{ p.pago_id }}</td>
               <td>#{{ p.incidente_id }}</td>
-              <td>{{ p.monto | number:'1.2-2' }}</td>
-              <td>{{ p.metodo }}</td>
-              <td>{{ p.fecha ? (p.fecha | date:'dd/MM/yyyy') : '-' }}</td>
+              <td style="font-weight:700;color:#16A34A;">Bs {{ p.monto | number:'1.2-2' }}</td>
+              <td><span class="badge badge-muted">{{ p.metodo }}</span></td>
+              <td class="td-date text-muted">{{ p.fecha ? (p.fecha | date:'dd/MM/yyyy') : '—' }}</td>
             </tr>
           }
         </tbody>
       </table>
-    }
+    </div>
+  } @else {
+    <div class="empty-row">
+      @if (montoMinimo !== null) {
+        No hay pagos ≥ Bs {{ montoMinimo }} en este período.
+      } @else {
+        No hay pagos registrados en este período.
+      }
+    </div>
   }
-</div>
+}
+
+<style>
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+  @media print { .no-print { display: none !important; } }
+  input[type="date"]:focus { outline: none; border-color: var(--primary) !important; box-shadow: 0 0 0 2px rgba(29,78,216,.15); }
+</style>

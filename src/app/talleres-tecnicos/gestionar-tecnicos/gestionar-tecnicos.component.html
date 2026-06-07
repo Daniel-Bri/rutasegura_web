@@ -84,6 +84,15 @@
 }
 
 <!-- ── Tabla de técnicos ─────────────────────────────── -->
+@if (!loadingTecnicos && tecnicos.length > 0) {
+  <div style="margin-bottom:1rem;position:relative;max-width:360px;">
+    <span class="material-symbols-outlined" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:17px;color:#9CA3AF;pointer-events:none;">search</span>
+    <input type="text" [(ngModel)]="busquedaTec"
+           placeholder="Buscar por nombre, especialidad o email…"
+           style="padding-left:2.1rem;height:38px;width:100%;" />
+  </div>
+}
+
 @if (loadingTecnicos) {
   <div class="loading-row">
     <span class="spinner-dark"></span> Cargando técnicos...
@@ -108,7 +117,10 @@
         </tr>
       </thead>
       <tbody>
-        @for (t of tecnicos; track t.id) {
+        @if (tecnicosFiltrados.length === 0) {
+          <tr><td colspan="7" style="text-align:center;color:#9CA3AF;padding:1.5rem;">Sin coincidencias para "{{ busquedaTec }}"</td></tr>
+        }
+        @for (t of tecnicosFiltrados; track t.id) {
           <tr>
             <td class="td-id">{{ t.id }}</td>
             <td class="td-name">{{ t.nombre }}</td>

@@ -1,0 +1,94 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Ranking de Talleres</h1>
+    <p class="page-sub">CU43 · Talleres ordenados por reputación</p>
+  </div>
+  <span class="badge badge-muted">{{ filtrados.length }} taller{{ filtrados.length !== 1 ? 'es' : '' }}</span>
+</div>
+
+<!-- Búsqueda en vivo -->
+<div style="margin-bottom:1.25rem;">
+  <div style="position:relative;max-width:380px;">
+    <span class="material-symbols-outlined" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:18px;color:#9CA3AF;pointer-events:none;">search</span>
+    <input type="text" [(ngModel)]="busqueda"
+           placeholder="Buscar por nombre, dirección o especialidad…"
+           style="padding-left:2.2rem;height:38px;width:100%;" />
+  </div>
+</div>
+
+@if (errorMsg) { <div class="alert-danger">{{ errorMsg }}</div> }
+@if (loading)  { <div class="loading-row"><span class="spinner-dark"></span> Cargando ranking...</div> }
+
+@if (!loading && filtrados.length === 0 && !errorMsg) {
+  <div class="empty-row">
+    @if (busqueda) { No hay talleres que coincidan con "{{ busqueda }}". }
+    @else { No hay talleres aprobados registrados aún. }
+  </div>
+}
+
+<div style="display:flex;flex-direction:column;gap:1rem;">
+  @for (t of filtrados; track t.id; let i = $index) {
+    <div class="form-card" style="padding:1.25rem;">
+
+      <!-- Cabecera del taller -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.75rem;">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <!-- Posición -->
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;flex-shrink:0;">
+            {{ i + 1 }}
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:1.05rem;">{{ t.nombre }}</div>
+            <div style="font-size:0.82rem;color:var(--text-muted);">{{ t.direccion }}</div>
+            @if (t.telefono) {
+              <div style="font-size:0.82rem;color:var(--text-muted);">{{ t.telefono }}</div>
+            }
+          </div>
+        </div>
+
+        <!-- Rating -->
+        <div style="text-align:right;">
+          <div style="font-size:1.5rem;color:#f59e0b;letter-spacing:2px;">{{ estrellas(t.rating) }}</div>
+          <div style="font-size:0.95rem;font-weight:600;">{{ t.rating | number:'1.1-1' }} / 5.0</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);">{{ t.total_calificaciones }} reseña{{ t.total_calificaciones !== 1 ? 's' : '' }}</div>
+        </div>
+      </div>
+
+      <!-- Especialidades -->
+      @if (t.especialidades.length > 0) {
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.75rem;">
+          @for (esp of t.especialidades; track esp) {
+            <span class="badge badge-muted">{{ esp }}</span>
+          }
+        </div>
+      }
+
+      <!-- Reseñas recientes -->
+      @if (t.total_calificaciones > 0) {
+        <button class="btn-secondary" style="margin-top:0.75rem;padding:0.35rem 0.9rem;font-size:0.82rem;width:auto;"
+                (click)="toggleResenas(t.id)">
+          {{ expandido === t.id ? 'Ocultar reseñas' : 'Ver reseñas recientes' }}
+        </button>
+
+        @if (expandido === t.id) {
+          <div style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.5rem;">
+            @for (r of t.resenas_recientes; track r.created_at) {
+              <div style="background:var(--bg-secondary,#f8fafc);border-radius:8px;padding:0.65rem 0.9rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
+                  <span style="color:#f59e0b;font-size:1rem;">{{ '★'.repeat(r.puntuacion) }}{{ '☆'.repeat(5 - r.puntuacion) }}</span>
+                  <span style="font-size:0.75rem;color:var(--text-muted);">{{ r.created_at | date:'dd/MM/yyyy' }}</span>
+                </div>
+                @if (r.comentario) {
+                  <div style="font-size:0.85rem;">{{ r.comentario }}</div>
+                } @else {
+                  <div style="font-size:0.82rem;color:var(--text-muted);font-style:italic;">Sin comentario</div>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+
+    </div>
+  }
+</div>

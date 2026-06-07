@@ -16,6 +16,7 @@ export class GenerarCotizacionComponent implements OnInit {
   incidenteSeleccionado: number | null = null;
 
   items: ItemCotizacion[] = [{ descripcion: '', cantidad: 1, precio_unitario: 0 }];
+  tiempoEstimadoHoras: number | null = null;
 
   loadingIncidentes = false;
   guardando         = false;
@@ -69,7 +70,11 @@ export class GenerarCotizacionComponent implements OnInit {
     this.guardando = true;
     this.errorMsg  = '';
 
-    this.svc.generar({ incidente_id: this.incidenteSeleccionado!, items: this.items }).subscribe({
+    this.svc.generar({
+      incidente_id: this.incidenteSeleccionado!,
+      items: this.items,
+      tiempo_estimado_horas: this.tiempoEstimadoHoras ?? undefined,
+    }).subscribe({
       next: (cot) => {
         this.successMsg = `Cotización #${cot.id} generada correctamente por Bs. ${cot.monto_estimado.toFixed(2)}`;
         this.guardando  = false;

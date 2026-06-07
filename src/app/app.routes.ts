@@ -42,6 +42,8 @@ import { VerificarLlegadaComponent } from './solicitudes/verificar-llegada/verif
 import { RecordatoriosComponent } from './reportes/recordatorios/recordatorios.component';
 import { ReporteTallerComponent } from './reportes/reporte-taller/reporte-taller.component';
 import { KpisDashboardComponent } from './reportes/kpis-dashboard/kpis-dashboard.component';
+import { GestionarReputacionComponent } from './reportes/gestionar-reputacion/gestionar-reputacion.component';
+import { RankingTalleresComponent } from './reportes/ranking-talleres/ranking-talleres.component';
 import { MiTallerPerfilComponent } from './acceso-registro/mi-taller-perfil/mi-taller-perfil.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
@@ -115,7 +117,9 @@ export const routes: Routes = [
       { path: 'reportes/calificar-servicio',  component: CalificarServicioComponent,  canActivate: [roleGuard], data: { roles: ['cliente'] } },
       { path: 'reportes/recordatorios',       component: RecordatoriosComponent,      canActivate: [roleGuard], data: { roles: ['cliente'] } },
       { path: 'reportes/reporte-taller',      component: ReporteTallerComponent,      canActivate: [roleGuard], data: { roles: ['taller'] } },
-      { path: 'reportes/kpis-dashboard',     component: KpisDashboardComponent,      canActivate: [roleGuard], data: { roles: ['admin', 'taller'] } },
+      { path: 'reportes/kpis-dashboard',       component: KpisDashboardComponent,        canActivate: [roleGuard], data: { roles: ['admin', 'taller'] } },
+      { path: 'reportes/gestionar-reputacion', component: GestionarReputacionComponent, canActivate: [roleGuard], data: { roles: ['admin'] } },
+      { path: 'reportes/ranking-talleres',     component: RankingTalleresComponent,     canActivate: [roleGuard], data: { roles: ['cliente', 'taller', 'admin'] } },
 
       // ── Stubs catch-all (rutas no implementadas aún) ───────
       { path: 'emergencias/:cu',       component: DashboardHomeComponent },

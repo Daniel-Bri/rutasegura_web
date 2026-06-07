@@ -48,6 +48,19 @@ export class GestionarTecnicosComponent implements OnInit {
   // ── Desactivar ─────────────────────────────────────────
   desactivando: Record<number, boolean> = {};
 
+  // ── Búsqueda ───────────────────────────────────────────
+  busquedaTec = '';
+
+  get tecnicosFiltrados(): TecnicoResponse[] {
+    const q = this.busquedaTec.trim().toLowerCase();
+    if (!q) return this.tecnicos;
+    return this.tecnicos.filter(t =>
+      t.nombre.toLowerCase().includes(q) ||
+      (t.especialidad ?? '').toLowerCase().includes(q) ||
+      (t.email ?? '').toLowerCase().includes(q)
+    );
+  }
+
   constructor(
     private svc: TecnicoService,
     private cdr: ChangeDetectorRef,

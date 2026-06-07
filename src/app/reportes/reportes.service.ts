@@ -60,6 +60,21 @@ export class ReportesService {
     return this.http.post(`${this.API}/calificaciones`, payload).pipe(timeout(10000));
   }
 
+  // CU44
+  listarCalificaciones(taller_id?: number): Observable<CalificacionAdmin[]> {
+    const q = taller_id ? `?taller_id=${taller_id}` : '';
+    return this.http.get<CalificacionAdmin[]>(`${this.API}/calificaciones${q}`).pipe(timeout(10000));
+  }
+
+  cambiarEstadoCalificacion(id: number, estado: 'activa' | 'eliminada'): Observable<CalificacionAdmin> {
+    return this.http.patch<CalificacionAdmin>(`${this.API}/calificaciones/${id}/estado`, { estado }).pipe(timeout(10000));
+  }
+
+  // CU43
+  rankingTalleres(): Observable<TallerRanking[]> {
+    return this.http.get<TallerRanking[]>(`${this.API}/ranking-talleres`).pipe(timeout(10000));
+  }
+
   kpis(params: { desde?: string; hasta?: string; tenant_id?: number } = {}): Observable<KpisResponse> {
     const p: string[] = [];
     if (params.desde)     p.push(`desde=${encodeURIComponent(params.desde)}`);
@@ -103,4 +118,34 @@ export interface KpisResponse {
   incidentes_por_tipo:            Record<string, number>;
   talleres_eficientes:            TallerEficiente[];
   zonas_calientes:                ZonaCaliente[];
+}
+
+export interface CalificacionAdmin {
+  id: number;
+  asignacion_id: number;
+  cliente_id: number;
+  taller_id: number;
+  puntuacion: number;
+  comentario: string | null;
+  estado: string;
+  created_at: string;
+  taller_nombre: string | null;
+  cliente_nombre: string | null;
+}
+
+export interface ResenaReciente {
+  puntuacion: number;
+  comentario: string | null;
+  created_at: string | null;
+}
+
+export interface TallerRanking {
+  id: number;
+  nombre: string;
+  direccion: string;
+  telefono: string | null;
+  rating: number;
+  total_calificaciones: number;
+  especialidades: string[];
+  resenas_recientes: ResenaReciente[];
 }

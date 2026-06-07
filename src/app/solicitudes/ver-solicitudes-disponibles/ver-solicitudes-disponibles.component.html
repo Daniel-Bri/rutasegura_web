@@ -73,6 +73,12 @@
               <span style="color:#EF4444;font-weight:600">Sin GPS</span>
             }
           </div>
+          @if (s.eta_min !== null) {
+            <div style="margin-top:4px;font-size:0.78rem;color:#D97706;font-weight:600;display:flex;align-items:center;gap:4px;">
+              <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">schedule</span>
+              ETA ~{{ s.eta_min }} min
+            </div>
+          }
 
           <!-- Acción rápida para invitados -->
           @if (s.estado === 'invitado') {
@@ -120,6 +126,12 @@
               <div class="stat-box">
                 <span class="stat-val" style="font-size:0.88rem">Distancia</span>
                 <span class="stat-lbl" style="color:#6366F1;font-weight:700">{{ seleccion.distancia_km | number:'1.1-1' }} km</span>
+              </div>
+            }
+            @if (seleccion.eta_min !== null) {
+              <div class="stat-box">
+                <span class="stat-val" style="font-size:0.88rem">ETA estimado</span>
+                <span class="stat-lbl" style="color:#D97706;font-weight:700">~{{ seleccion.eta_min }} min</span>
               </div>
             }
           </div>

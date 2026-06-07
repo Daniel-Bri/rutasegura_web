@@ -1,0 +1,87 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Gestionar Reputación</h1>
+    <p class="page-sub">CU44 · Moderar calificaciones de talleres</p>
+  </div>
+  <span class="badge badge-muted">{{ filtrados.length }} calificacion{{ filtrados.length !== 1 ? 'es' : '' }}</span>
+</div>
+
+<!-- Filtros -->
+<div style="display:flex;gap:0.75rem;align-items:flex-end;margin-bottom:1.25rem;flex-wrap:wrap;">
+  <div class="field" style="margin:0;flex:1;min-width:220px;">
+    <label>Buscar</label>
+    <div style="position:relative;">
+      <span class="material-symbols-outlined" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:17px;color:#9CA3AF;pointer-events:none;">search</span>
+      <input type="text" [(ngModel)]="busqueda" placeholder="Taller, cliente o comentario…" style="padding-left:2.1rem;height:38px;width:100%;" />
+    </div>
+  </div>
+  <div class="field" style="margin:0;">
+    <label>Estado</label>
+    <select [(ngModel)]="estadoFiltro" style="height:38px;padding:0.4rem 0.75rem;">
+      <option value="">Todos</option>
+      <option value="activa">Activas</option>
+      <option value="eliminada">Eliminadas</option>
+    </select>
+  </div>
+  <button class="btn-secondary" style="padding:0.5rem 1rem;margin:0;"
+          (click)="busqueda=''; estadoFiltro=''">Limpiar</button>
+  <button class="btn-secondary" style="padding:0.5rem 1rem;margin:0;" (click)="cargar()" [disabled]="loading">
+    <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;margin-right:4px">refresh</span>
+    Recargar
+  </button>
+</div>
+
+@if (errorMsg) { <div class="alert-danger">{{ errorMsg }}</div> }
+@if (okMsg)    { <div class="alert-success">{{ okMsg }}</div> }
+
+<div class="table-card">
+  @if (loading && calificaciones.length === 0) {
+    <div class="loading-row"><span class="spinner-dark"></span> Cargando...</div>
+  } @else if (filtrados.length === 0) {
+    <div class="empty-row">
+      @if (calificaciones.length === 0) { No hay calificaciones registradas. }
+      @else { Sin resultados para los filtros aplicados. }
+    </div>
+  } @else {
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Taller</th>
+          <th>Cliente</th>
+          <th>Puntuación</th>
+          <th>Comentario</th>
+          <th>Estado</th>
+          <th>Fecha</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (cal of filtrados; track cal.id) {
+          <tr [class.row-muted]="cal.estado === 'eliminada'">
+            <td>{{ cal.id }}</td>
+            <td>{{ cal.taller_nombre ?? '#' + cal.taller_id }}</td>
+            <td>{{ cal.cliente_nombre ?? '#' + cal.cliente_id }}</td>
+            <td style="font-size:1.1rem;letter-spacing:1px;color:#f59e0b;">{{ estrellas(cal.puntuacion) }}</td>
+            <td style="max-width:260px;word-break:break-word;">{{ cal.comentario || '—' }}</td>
+            <td>
+              @if (cal.estado === 'activa') {
+                <span class="badge badge-green">Activa</span>
+              } @else {
+                <span class="badge badge-danger">Eliminada</span>
+              }
+            </td>
+            <td style="white-space:nowrap;">{{ cal.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>
+              @if (cal.estado === 'activa') {
+                <button class="btn-danger-sm" (click)="cambiarEstado(cal, 'eliminada')">Eliminar</button>
+              } @else {
+                <button class="btn-secondary-sm" (click)="cambiarEstado(cal, 'activa')">Restaurar</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

@@ -10,16 +10,49 @@
   </button>
 </div>
 
+<!-- Filtros -->
+<div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.25rem;align-items:flex-end;">
+  <div class="field" style="margin:0;flex:1;min-width:200px;">
+    <label>Buscar</label>
+    <div style="position:relative;">
+      <span class="material-symbols-outlined" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:17px;color:#9CA3AF;pointer-events:none;">search</span>
+      <input type="text" [(ngModel)]="busqueda" placeholder="trabajo, tipo, incidente…" style="padding-left:2.1rem;height:38px;width:100%;" />
+    </div>
+  </div>
+  <div class="field" style="margin:0;">
+    <label>Tipo</label>
+    <select [(ngModel)]="tipoFiltro" style="height:38px;padding:0.4rem 0.75rem;">
+      <option value="">Todos</option>
+      @for (t of tipos; track t) { <option [value]="t">{{ t }}</option> }
+    </select>
+  </div>
+  <div class="field" style="margin:0;">
+    <label>Desde</label>
+    <input type="date" [(ngModel)]="desdeFilter" style="height:38px;padding:0.4rem 0.75rem;" />
+  </div>
+  <div class="field" style="margin:0;">
+    <label>Hasta</label>
+    <input type="date" [(ngModel)]="hastaFilter" style="height:38px;padding:0.4rem 0.75rem;" />
+  </div>
+  <button class="btn-secondary" style="padding:0.5rem 1rem;margin:0;" (click)="limpiarFiltros()">Limpiar</button>
+  <span class="badge badge-muted" style="font-size:0.82rem;padding:0.4rem 0.9rem;align-self:flex-end;">{{ filtrados.length }} resultado{{ filtrados.length !== 1 ? 's' : '' }}</span>
+</div>
+
 @if (errorMsg) {
   <div class="alert-danger">{{ errorMsg }}</div>
 }
 
 @if (loading) {
   <div class="loading-row"><span class="spinner-dark"></span> Cargando historial...</div>
-} @else if (historial.length === 0) {
+} @else if (filtrados.length === 0) {
   <div class="empty-state">
     <span class="material-symbols-outlined" style="font-size:40px;color:#9CA3AF">history</span>
-    <p>Aún no hay servicios completados registrados.</p>
+    @if (historial.length === 0) {
+      <p>Aún no hay servicios completados registrados.</p>
+    } @else {
+      <p>No hay resultados para los filtros aplicados.</p>
+      <button class="btn-secondary" style="margin-top:0.75rem;width:auto;padding:0.4rem 1rem;" (click)="limpiarFiltros()">Limpiar filtros</button>
+    }
   </div>
 } @else {
   <div class="table-card">
@@ -36,7 +69,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (item of historial; track item.id) {
+        @for (item of filtrados; track item.id) {
           <tr>
             <td class="td-id">{{ item.id }}</td>
             <td>

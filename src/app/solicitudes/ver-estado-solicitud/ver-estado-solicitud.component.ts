@@ -1,7 +1,7 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SolicitudService, MiSolicitud, CalificacionPendiente } from '../solicitud.service';
+import { SolicitudService, MiSolicitud, CalificacionPendiente, TallerCandidato } from '../solicitud.service';
 
 @Component({
   selector: 'app-ver-estado-solicitud',
@@ -20,8 +20,9 @@ export class VerEstadoSolicitudComponent implements OnInit, OnDestroy {
   puntuacion = 5;
   resena = '';
   enviandoCalificacion = false;
+  candidatos: Record<number, TallerCandidato[]> = {};
 
-  constructor(private solicitudSvc: SolicitudService) {}
+  constructor(private solicitudSvc: SolicitudService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.cargar();
@@ -42,12 +43,23 @@ export class VerEstadoSolicitudComponent implements OnInit, OnDestroy {
         this.items = data;
         this.loading = false;
         if (!silencioso) this.cargarPendientesCalificacion();
+        // CU39: cargar candidatos para incidentes pendientes
+        for (const item of data) {
+          if (item.incidente.estado === 'pendiente' && !this.candidatos[item.incidente.id]) {
+            this.solicitudSvc.tallersCandidatos(item.incidente.id).subscribe({
+              next: (cands) => { this.candidatos[item.incidente.id] = cands; this.cdr.detectChanges(); },
+              error: () => {},
+            });
+          }
+        }
+        this.cdr.detectChanges();
       },
       error: (e) => {
         this.loading = false;
         this.errorMsg =
           e?.error?.detail ??
           (typeof e?.message === 'string' ? e.message : 'No se pudieron cargar las solicitudes.');
+        this.cdr.detectChanges();
       },
     });
   }
@@ -108,6 +120,10 @@ export class VerEstadoSolicitudComponent implements OnInit, OnDestroy {
       cancelado: 'Cancelado',
     };
     return m[e] ?? e;
+  }
+
+  estrellas(r: number): string {
+    return '★'.repeat(Math.round(r)) + '☆'.repeat(5 - Math.round(r));
   }
 
   badgeClass(estado: string): string {

@@ -13,6 +13,7 @@ export interface ItemCotizacion {
 export interface CotizacionCreate {
   incidente_id: number;
   items: ItemCotizacion[];
+  tiempo_estimado_horas?: number | null;
 }
 
 export interface CotizacionResponse {
@@ -22,7 +23,23 @@ export interface CotizacionResponse {
   monto_estimado: number;
   detalle: string | null;
   estado: string;
+  estado_asignacion?: string | null;
+  tiempo_estimado_horas?: number | null;
+  taller_nombre?: string | null;
+  taller_rating?: number | null;
   created_at: string;
+}
+
+export interface TallerCandidato {
+  taller_id: number;
+  nombre: string;
+  direccion: string;
+  telefono: string | null;
+  rating: number;
+  especialidades: string[];
+  distancia_km: number | null;
+  eta_min: number | null;
+  estado_asignacion: string;
 }
 
 export interface IncidenteDisponible {
@@ -121,6 +138,10 @@ export class CotizacionService {
 
   listarHistorial(): Observable<HistorialItem[]> {
     return this.http.get<HistorialItem[]>(`${this.REPORTES}/historial`).pipe(timeout(10000));
+  }
+
+  tallersCandidatos(incidenteId: number): Observable<TallerCandidato[]> {
+    return this.http.get<TallerCandidato[]>(`${environment.apiUrl}/api/solicitudes/${incidenteId}/talleres-candidatos`).pipe(timeout(8000));
   }
 
   parsearItems(detalle: string | null): ItemCotizacion[] {
