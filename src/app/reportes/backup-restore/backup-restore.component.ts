@@ -97,9 +97,17 @@ import { BackupSchedulerService, AutoConfig } from '../../core/services/backup-s
         </div>
 
         @if (autoConfig.activo) {
-          <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px 16px;font-size:12px;color:#1D4ED8">
-            <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:4px">info</span>
-            Próximo backup: <strong>{{ proximaEjecucion() }}</strong> · Última ejecución: {{ autoConfig.ultimaEjecucion ? formatFecha(autoConfig.ultimaEjecucion) : 'Nunca' }}
+          <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px 16px;font-size:12px;color:#1D4ED8;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <span>
+              <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:4px">info</span>
+              Próximo backup: <strong>{{ proximaEjecucion() }}</strong> · Última ejecución: {{ autoConfig.ultimaEjecucion ? formatFecha(autoConfig.ultimaEjecucion) : 'Nunca' }}
+            </span>
+            @if (autoConfig.ultimaEjecucion) {
+              <button (click)="resetUltimaEjecucion()" title="Fuerza que el backup dispare en la próxima verificación"
+                style="padding:4px 12px;background:white;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">
+                Limpiar estado
+              </button>
+            }
           </div>
         }
       </div>
@@ -237,6 +245,11 @@ export class BackupRestoreComponent implements OnInit, OnDestroy {
   }
 
   guardarConfig(): void {
+    this.scheduler.saveConfig(this.autoConfig);
+  }
+
+  resetUltimaEjecucion(): void {
+    this.autoConfig = { ...this.autoConfig, ultimaEjecucion: null };
     this.scheduler.saveConfig(this.autoConfig);
   }
 

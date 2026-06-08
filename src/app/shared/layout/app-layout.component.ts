@@ -144,6 +144,9 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.backupScheduler.iniciar();
+    this.backupScheduler.onBackupCompletado = (r) => r.ok
+      ? this.mostrarToast('Backup automático', 'Descargado correctamente.')
+      : this.mostrarToast('Backup automático', 'Error al conectar con el servidor.');
     this.wsSvc.conectar();
     this.pushSvc.inicializar();
     this.wsSub = this.wsSvc.on('notificacion').subscribe((payload) => {
