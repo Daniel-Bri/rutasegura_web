@@ -14,12 +14,14 @@ export interface AutoConfig {
 @Injectable({ providedIn: 'root' })
 export class BackupSchedulerService {
   private timer: any = null;
+  onBackupCompletado?: (result: { ok: boolean }) => void;
 
   constructor(private svc: ReportesService) {}
 
   iniciar(): void {
     if (this.timer) return;
-    this.timer = setInterval(() => this.verificar(), 60_000);
+    this.verificar();
+    this.timer = setInterval(() => this.verificar(), 15_000);
   }
 
   detener(): void {
@@ -58,6 +60,7 @@ export class BackupSchedulerService {
       if (diffMin < (minimos[config.intervalo] ?? 1440)) return;
     }
 
+    // Marcar como en progreso para evitar re-disparo dentro del mismo minuto
     config.ultimaEjecucion = ahora.toISOString();
     this.saveConfig(config);
 
@@ -69,8 +72,17 @@ export class BackupSchedulerService {
         const a    = document.createElement('a');
         a.href     = url;
         a.download = `rutasegura_backup_auto_${ts}.json`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        this.onBackupCompletado?.({ ok: true });
+      },
+      error: () => {
+        // Revertir el timestamp para permitir reintento en el próximo ciclo de 15s
+        config.ultimaEjecucion = null;
+        this.saveConfig(config);
+        this.onBackupCompletado?.({ ok: false });
       },
     });
   }

@@ -104,6 +104,17 @@ import { BackupSchedulerService, AutoConfig } from '../../core/services/backup-s
         }
       </div>
 
+      <!-- ── Toast backup automático ── -->
+      @if (toastAuto) {
+        <div style="position:fixed;bottom:24px;right:24px;z-index:9999;padding:14px 20px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.15);display:flex;align-items:center;gap:10px;max-width:340px"
+          [style.background]="toastAuto.ok ? '#F0FDF4' : '#FEF2F2'"
+          [style.color]="toastAuto.ok ? '#16A34A' : '#DC2626'"
+          [style.border]="toastAuto.ok ? '1px solid #BBF7D0' : '1px solid #FCA5A5'">
+          <span class="material-symbols-outlined" style="font-size:18px">{{ toastAuto.ok ? 'check_circle' : 'error' }}</span>
+          {{ toastAuto.texto }}
+        </div>
+      }
+
       <!-- ── Restaurar ── -->
       <div class="card">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
@@ -201,11 +212,29 @@ export class BackupRestoreComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
   ) {}
 
+  toastAuto: { ok: boolean; texto: string } | null = null;
+  private toastTimer: any = null;
+
   ngOnInit(): void {
     this.autoConfig = this.scheduler.getConfig();
+    this.scheduler.onBackupCompletado = (result) => {
+      clearTimeout(this.toastTimer);
+      this.autoConfig = this.scheduler.getConfig();
+      this.toastAuto = result.ok
+        ? { ok: true,  texto: 'Backup automático descargado correctamente.' }
+        : { ok: false, texto: 'Error al generar el backup automático. Se reintentará en el próximo ciclo.' };
+      this.cdr.detectChanges();
+      this.toastTimer = setTimeout(() => {
+        this.toastAuto = null;
+        this.cdr.detectChanges();
+      }, 6000);
+    };
   }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void {
+    this.scheduler.onBackupCompletado = undefined;
+    clearTimeout(this.toastTimer);
+  }
 
   guardarConfig(): void {
     this.scheduler.saveConfig(this.autoConfig);
