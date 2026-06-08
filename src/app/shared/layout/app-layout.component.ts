@@ -6,6 +6,7 @@ import { AuthService } from '../../acceso-registro/auth.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { OfflineQueueService } from '../../core/services/offline-queue.service';
 import { PushNotificationService } from '../../core/services/push-notification.service';
+import { BackupSchedulerService } from '../../core/services/backup-scheduler.service';
 import { type AppRole } from '../../core/permissions/permissions.config';
 
 interface NavItem    { label: string; route: string; roles: AppRole[]; }
@@ -136,11 +137,13 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
     private wsSvc: WebSocketService,
     public offlineSvc: OfflineQueueService,
     private pushSvc: PushNotificationService,
+    private backupScheduler: BackupSchedulerService,
   ) {}
 
   private wsMsgSub?: Subscription;
 
   ngOnInit(): void {
+    this.backupScheduler.iniciar();
     this.wsSvc.conectar();
     this.pushSvc.inicializar();
     this.wsSub = this.wsSvc.on('notificacion').subscribe((payload) => {

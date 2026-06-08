@@ -2,16 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReportesService } from '../reportes.service';
-
-interface AutoConfig {
-  activo: boolean;
-  hora: number;
-  minuto: number;
-  intervalo: 'diario' | 'semanal' | 'mensual';
-  ultimaEjecucion: string | null;
-}
-
-const CONFIG_KEY = 'rutasegura_backup_config';
+import { BackupSchedulerService, AutoConfig } from '../../core/services/backup-scheduler.service';
 
 @Component({
   selector: 'app-backup-restore',
@@ -204,23 +195,20 @@ export class BackupRestoreComponent implements OnInit, OnDestroy {
   restaurando  = false;
   mensajeRestore: { ok: boolean; texto: string } | null = null;
 
-  private timer: any;
-
-  constructor(private svc: ReportesService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private svc: ReportesService,
+    private scheduler: BackupSchedulerService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
-    const saved = localStorage.getItem(CONFIG_KEY);
-    if (saved) this.autoConfig = JSON.parse(saved);
-    // Revisar cada minuto si toca ejecutar el backup automático
-    this.timer = setInterval(() => this.verificarAuto(), 60_000);
+    this.autoConfig = this.scheduler.getConfig();
   }
 
-  ngOnDestroy(): void {
-    clearInterval(this.timer);
-  }
+  ngOnDestroy(): void {}
 
   guardarConfig(): void {
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(this.autoConfig));
+    this.scheduler.saveConfig(this.autoConfig);
   }
 
   descargarManual(): void {
@@ -249,34 +237,6 @@ export class BackupRestoreComponent implements OnInit, OnDestroy {
     a.download = `rutasegura_backup_${ts}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  }
-
-  private verificarAuto(): void {
-    if (!this.autoConfig.activo) return;
-    const ahora  = new Date();
-    const hMatch = ahora.getHours()   === this.autoConfig.hora;
-    const mMatch = ahora.getMinutes() === this.autoConfig.minuto;
-    if (!hMatch || !mMatch) return;
-
-    // Evitar ejecuciones dobles dentro del mismo minuto
-    const ultima = this.autoConfig.ultimaEjecucion
-      ? new Date(this.autoConfig.ultimaEjecucion)
-      : null;
-    if (ultima) {
-      const diffMin = (ahora.getTime() - ultima.getTime()) / 60_000;
-      if (!this.deberia_ejecutar(diffMin)) return;
-    }
-
-    this.autoConfig.ultimaEjecucion = ahora.toISOString();
-    this.guardarConfig();
-    this.svc.descargarBackup().subscribe({
-      next: (blob) => this.triggerDownload(blob),
-    });
-  }
-
-  private deberia_ejecutar(diffMin: number): boolean {
-    const min: Record<string, number> = { diario: 1440, semanal: 10080, mensual: 43200 };
-    return diffMin >= (min[this.autoConfig.intervalo] ?? 1440);
   }
 
   proximaEjecucion(): string {
