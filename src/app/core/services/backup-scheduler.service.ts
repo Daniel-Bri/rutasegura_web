@@ -29,13 +29,16 @@ export class BackupSchedulerService {
 
   getConfig(): AutoConfig {
     const saved = localStorage.getItem(CONFIG_KEY);
-    return saved ? JSON.parse(saved) : {
+    const base = saved ? JSON.parse(saved) : {
       activo: false, hora: 2, minuto: 0, intervalo: 'diario', ultimaEjecucion: null,
     };
+    // Forzar números para evitar comparaciones string === number
+    return { ...base, hora: Number(base.hora), minuto: Number(base.minuto) };
   }
 
   saveConfig(config: AutoConfig): void {
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+    const safe = { ...config, hora: Number(config.hora), minuto: Number(config.minuto) };
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(safe));
   }
 
   private verificar(): void {
@@ -44,8 +47,8 @@ export class BackupSchedulerService {
 
     const ahora  = new Date();
     // Hora local del dispositivo (Bolivia UTC-4)
-    const hMatch = ahora.getHours()   === config.hora;
-    const mMatch = ahora.getMinutes() === config.minuto;
+    const hMatch = ahora.getHours()   === Number(config.hora);
+    const mMatch = ahora.getMinutes() === Number(config.minuto);
     if (!hMatch || !mMatch) return;
 
     const ultima = config.ultimaEjecucion ? new Date(config.ultimaEjecucion) : null;
